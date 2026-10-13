@@ -14,14 +14,18 @@ from flask import (
     Blueprint,
     current_app,
     flash,
+    g,
     redirect,
     render_template,
     request,
     url_for,
 )
 
-from .auth import parent_required
+from .auth import login_required, parent_required
 from .db import get_db
+# The wallet's own helper, not a second copy of the arithmetic, so a balance
+# shown in the buy modal can never disagree with the one on the wallet page.
+from .wallet import get_totals
 
 bp = Blueprint("shop", __name__, url_prefix="/shop")
 
@@ -148,9 +152,11 @@ def add_from_form():
 
 
 @bp.route("/")
+@login_required
 def index():
-    """Render the storefront: every card that is currently for sale."""
-    cards = get_db().execute(
+    """Render the storefront: every card for sale, with a Buy control for kids."""
+    db = get_db()
+    cards = db.execute(
         """
         SELECT id, name, set_name, number, tier, price_chapters, image_url
           FROM cards
@@ -158,7 +164,65 @@ def index():
          ORDER BY name COLLATE NOCASE, set_name COLLATE NOCASE, number
         """
     ).fetchall()
-    return render_template("shop/store.html", cards=cards)
+    # The modal states the balance, so it is read here. None for a parent, who
+    # owns the stock and gets no Buy control at all.
+    balance = None
+    if g.user["role"] == "kid":
+        totals = get_totals(db, g.user["id"])
+        balance = totals["earned"] - totals["spent"]
+    return render_template("shop/store.html", cards=cards, balance=balance)
+
+
+@bp.route("/buy/<int:card_id>", methods=("POST",))
+@login_required
+def buy(card_id):
+    """Buy one card for the signed-in kid, at the price it carries right now."""
+    db = get_db()
+
+    # A parent owns the stock, so they are refused here explicitly rather than
+    # being left to fail on a balance that happens to be zero.
+    if g.user["role"] != "kid":
+        flash("Only kids can buy cards. A parent owns the shop stock.", "danger")
+        return redirect(url_for("shop.index"))
+
+    card = db.execute(
+        "SELECT id, name, price_chapters, for_sale FROM cards WHERE id = ?", (card_id,)
+    ).fetchone()
+    if card is None:
+        flash("That card is not in the shop.", "danger")
+        return redirect(url_for("shop.index"))
+    if not card["for_sale"]:
+        flash(f"{card['name']} is not for sale.", "danger")
+        return redirect(url_for("shop.index"))
+
+    totals = get_totals(db, g.user["id"])
+    balance = totals["earned"] - totals["spent"]
+    if balance < card["price_chapters"]:
+        flash(
+            f"{card['name']} costs {card['price_chapters']} chapters and you have "
+            f"{balance}. Log another chapter first.",
+            "danger",
+        )
+        return redirect(url_for("shop.index"))
+
+    try:
+        db.execute(
+            "INSERT INTO purchases (user_id, card_id, chapters_spent) VALUES (?, ?, ?)",
+            # The price is copied in as it stands now, so re-pricing the card
+            # tomorrow cannot rewrite what this kid already paid. Nothing reads a
+            # price back out of the card when showing a balance.
+            (g.user["id"], card["id"], card["price_chapters"]),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        # purchases.card_id is UNIQUE, so this card was already bought. Reported
+        # as a message rather than letting the constraint raise a 500.
+        db.rollback()
+        flash(f"{card['name']} has already been bought.", "danger")
+        return redirect(url_for("shop.index"))
+
+    flash(f"You bought {card['name']} for {card['price_chapters']} chapters.", "success")
+    return redirect(url_for("wallet.index"))
 
 
 @bp.route("/add", methods=("GET", "POST"))
