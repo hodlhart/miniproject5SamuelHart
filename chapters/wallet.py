@@ -49,7 +49,7 @@ def get_statement(db, user_id):
     # One row per event, so earnings and purchases can stack in a single table.
     # Two details keep the running balance honest:
     #
-    #   logged_at and purchased_at are CURRENT_TIMESTAMP, which has one-second
+    #   logged_at and purchased_at are local time with one-second
     #   resolution, so a kid logging quickly gets rows that tie. ORDER BY
     #   (happened_at, kind, source_id) is a total order even then, because
     #   source_id is that row's primary key, so the sequence cannot shuffle
@@ -182,16 +182,24 @@ def log_chapter():
                         (kid_id, title),
                     ).lastrowid
                 except sqlite3.IntegrityError:
-                    # UNIQUE (user_id, title COLLATE NOCASE) caught a case
-                    # variant. The row that already exists is named back, so the
-                    # kid sees how it is spelled on their own shelf.
+                    # UNIQUE (user_id, title COLLATE NOCASE) means this kid
+                    # already owns that title under some spelling. NOCASE is the
+                    # schema's own definition of "the same book", so the chapter
+                    # belongs on the existing row rather than being refused. The
+                    # form opens on "A new book", which makes refusing the dead
+                    # end a kid walks into by retyping a title they already have.
                     db.rollback()
                     existing = db.execute(
-                        "SELECT title FROM books"
+                        "SELECT id FROM books"
                         " WHERE user_id = ? AND title COLLATE NOCASE = ?",
                         (kid_id, title),
                     ).fetchone()
-                    error = f"You already have a book called {existing['title']}."
+                    if existing is None:
+                        # The constraint fired for some other reason, so there is
+                        # nothing to attach to and picking a book would be a guess.
+                        error = "That book could not be saved."
+                    else:
+                        book_id = existing["id"]
 
             if error is None:
                 try:

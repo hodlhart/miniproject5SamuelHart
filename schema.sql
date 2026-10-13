@@ -4,6 +4,30 @@
 --
 -- SQLite has no "#" comment, so the usual project header is spelled with "--".
 
+-- TIMESTAMPS ARE LOCAL TIME, NOT UTC
+--
+-- Every TEXT timestamp below defaults to datetime('now','localtime') rather than
+-- to CURRENT_TIMESTAMP. CURRENT_TIMESTAMP is UTC, so in America/Chicago a chapter
+-- logged at 19:00 was stored as 00:00 the next day, and the wallet statement
+-- showed a kid tomorrow's date.
+--
+--   The parentheses around the default are required. SQLite only accepts a
+--   non-constant default expression when it is parenthesized, so
+--   DEFAULT datetime('now','localtime') without them is a syntax error.
+--
+--   Do not add datetime(x, 'localtime') anywhere on display either. Storing local
+--   and converting on read are mutually exclusive: converting an already-local
+--   value subtracts the offset a second time, shifting every timestamp by that
+--   offset with no error at all. Fix the storage and leave the reads alone.
+--
+--   The offset is not a constant. datetime('now','localtime') follows daylight
+--   saving, so it is five hours in CDT and six in CST. The figures above are the
+--   CDT ones. The code is right either way; only the arithmetic in this comment
+--   is seasonal.
+--
+-- Rows written before this change are UTC, so an existing database holds a mix of
+-- the two conventions. Re-run init-db rather than reusing one.
+
 -- Re-runnable: children are dropped before parents so no foreign key blocks a drop.
 DROP TABLE IF EXISTS purchases;
 DROP TABLE IF EXISTS chapters;
@@ -18,7 +42,7 @@ CREATE TABLE users (
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('kid', 'parent')),
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 -- One row is one book a kid is reading. The title lives here and nowhere else,
@@ -27,7 +51,7 @@ CREATE TABLE books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     title TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
     -- A kid cannot own the same title twice. COLLATE NOCASE folds ASCII case
     -- only, and it cannot see inside a string, so the route must still collapse
     -- runs of whitespace and trim ends before insert. 'Wings  of Fire' and
@@ -45,7 +69,7 @@ CREATE TABLE chapters (
     -- deleted, so tidying up the book list cannot erase earned chapters.
     book_id INTEGER NOT NULL REFERENCES books (id) ON DELETE RESTRICT,
     chapter_number INTEGER NOT NULL CHECK (chapter_number > 0),
-    logged_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    logged_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
     -- Exact, because book_id is an integer with no case to fold: the same
     -- chapter of the same book cannot be logged twice by one kid.
     UNIQUE (book_id, chapter_number)
@@ -71,7 +95,7 @@ CREATE TABLE cards (
     -- collection lives. A CHECK cannot read another table, so the buy handler
     -- is what actually refuses the purchase.
     for_sale INTEGER NOT NULL DEFAULT 1 CHECK (for_sale IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 -- One row is one card bought, by one kid, at one moment. This is the spending
@@ -88,7 +112,7 @@ CREATE TABLE purchases (
     -- so sufficiency of funds is the buy handler's job and nothing here
     -- substitutes for it.
     chapters_spent INTEGER NOT NULL CHECK (chapters_spent > 0),
-    purchased_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    purchased_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 -- A balance reads every purchase for one kid, so that lookup gets an index.

@@ -33,7 +33,8 @@
         <tbody>
           {% for event in events %}
             <tr>
-              {# Stored as UTC by CURRENT_TIMESTAMP, shown as stored. #}
+              {# Already local time as stored, so it is shown as stored and
+                 nothing converts it again. #}
               <td class="text-nowrap text-body-secondary">{{ event["happened_at"] }}</td>
               <td>
                 {% if event["kind"] == "chapter" %}
