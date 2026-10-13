@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+
+# The SQLite database is created by `flask init-db`, never committed.
+instance/
+*.sqlite
+*.sqlite3
+*.db
+
+# No credential belongs in this project (TCGdex needs no API key), but keep
+# the ignore rule so one can never be committed by accident.
+.env
