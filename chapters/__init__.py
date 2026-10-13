@@ -2,7 +2,7 @@
 # Samuel Hart
 # Mini Project 5
 
-"""Application factory for the Chapter Cards app."""
+"""Application factory for the Pages for Pokemon app."""
 
 import os
 

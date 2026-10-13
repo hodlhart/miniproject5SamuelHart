@@ -210,7 +210,8 @@ def buy(card_id):
             """
             INSERT INTO purchases (user_id, card_id, chapters_spent)
             SELECT ?, ?, ?
-             WHERE (SELECT COUNT(*) FROM chapters c JOIN books b ON b.id = c.book_id
+             WHERE (SELECT COALESCE(SUM(c.chapter_count), 0)
+                      FROM chapters c JOIN books b ON b.id = c.book_id
                      WHERE b.user_id = ?)
                  - (SELECT COALESCE(SUM(chapters_spent), 0) FROM purchases
                      WHERE user_id = ?) >= ?

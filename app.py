@@ -2,7 +2,7 @@
 # Samuel Hart
 # Mini Project 5
 
-"""Development entry point. Run this file to start the Chapter Cards server."""
+"""Development entry point. Run this file to start the Pages for Pokemon server."""
 
 from chapters import create_app
 

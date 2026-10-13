@@ -1,28 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Log a chapter - Chapter Cards{% endblock %}
+{% block title %}Log reading - Pages for Pokemon{% endblock %}
 
 {% block content %}
-  <h1 class="h3 mb-4">Log a chapter</h1>
+  <h1 class="h3 mb-4">Log reading</h1>
+
+  {# The server decides the first paint from the posted value, exactly as the
+     select does, so a rejected submission comes back with the title box still
+     showing what was typed. The script below only keeps it in step after that,
+     which is why the page is complete with no JavaScript at all. #}
+  {% set chosen = request.form.get("book_id", "new") %}
+  {% set is_new_book = chosen == "new" %}
 
   <form method="post">
     <div class="mb-3">
       <label for="book_id" class="form-label">Which book?</label>
       <select class="form-select" id="book_id" name="book_id">
-        <option value="new"
-          {% if request.form.get("book_id", "new") == "new" %}selected{% endif %}>
-          A new book
-        </option>
+        <option value="new" {% if is_new_book %}selected{% endif %}>A new book</option>
         {% for book in books %}
           <option value="{{ book['id'] }}"
-            {% if request.form.get("book_id") == book["id"]|string %}selected{% endif %}>
+            {% if chosen == book["id"]|string %}selected{% endif %}>
             {{ book["title"] }}
           </option>
         {% endfor %}
       </select>
     </div>
 
-    <div class="mb-3">
+    <div class="mb-3 {% if not is_new_book %}d-none{% endif %}" id="title-field">
       <label for="title" class="form-label">New book title</label>
       <input type="text" class="form-control" id="title" name="title"
              value="{{ request.form.get('title', '') }}"
@@ -33,13 +37,40 @@
     </div>
 
     <div class="mb-3">
-      <label for="chapter_number" class="form-label">Chapter number</label>
-      <input type="number" class="form-control" id="chapter_number"
-             name="chapter_number" min="1" step="1"
-             value="{{ request.form.get('chapter_number', '') }}" required>
+      <label for="chapter_count" class="form-label">How many chapters?</label>
+      <input type="number" class="form-control" id="chapter_count"
+             name="chapter_count" min="1" step="1"
+             value="{{ request.form.get('chapter_count', '') }}" required>
     </div>
 
     <button type="submit" class="btn btn-primary">Log it</button>
     <a class="btn btn-outline-secondary" href="{{ url_for('wallet.index') }}">Cancel</a>
   </form>
+
+  <script>
+    // Keeps the title box in step with the dropdown after load. The server has
+    // already set the correct state for the first paint, so this only handles
+    // changes, and the page works without it.
+    const bookPicker = document.getElementById("book_id");
+    const titleField = document.getElementById("title-field");
+    const titleInput = document.getElementById("title");
+
+    function syncTitleField() {
+      const isNew = bookPicker.value === "new";
+      titleField.classList.toggle("d-none", !isNew);
+      // Hiding a control does not stop the browser validating it, so a hidden
+      // required field would block the submit and report the error against
+      // something nobody can see. The attribute goes on and off with the
+      // visibility, and without JavaScript it is never added at all, so the
+      // no-JS path cannot be blocked by it.
+      if (isNew) {
+        titleInput.setAttribute("required", "required");
+      } else {
+        titleInput.removeAttribute("required");
+      }
+    }
+
+    bookPicker.addEventListener("change", syncTitleField);
+    syncTitleField();
+  </script>
 {% endblock %}

@@ -26,11 +26,12 @@ bp = Blueprint("wallet", __name__)
 def get_totals(db, user_id):
     """Return one kid's row of chapters earned and chapters spent."""
     # Shaped as the note at the end of schema.sql describes: driven from users,
-    # counting c.id rather than *. COUNT(*) would count the joined rows, and a
-    # kid with a book but no chapters would read as having earned one.
+    # summing chapter_count. COALESCE is needed because SUM over the NULLs a
+    # LEFT JOIN introduces is NULL, not 0, and a kid with no chapters at all
+    # would otherwise read as None.
     return db.execute(
         """
-        SELECT COUNT(c.id) AS earned,
+        SELECT COALESCE(SUM(c.chapter_count), 0) AS earned,
                COALESCE((SELECT SUM(p.chapters_spent)
                            FROM purchases p
                           WHERE p.user_id = u.id), 0) AS spent
@@ -67,8 +68,10 @@ def get_statement(db, user_id):
                    'chapter'         AS kind,
                    ch.id             AS source_id,
                    b.title           AS label,
-                   ch.chapter_number AS chapter_number,
-                   1                 AS delta
+                   ch.chapter_count  AS chapter_count,
+                   -- The row is worth however many chapters it recorded, so the
+                   -- delta is that count and not a literal 1.
+                   ch.chapter_count  AS delta
               FROM chapters ch
               JOIN books b ON b.id = ch.book_id
              WHERE b.user_id = :user_id
@@ -83,7 +86,7 @@ def get_statement(db, user_id):
               JOIN cards c ON c.id = p.card_id
              WHERE p.user_id = :user_id
         )
-        SELECT happened_at, kind, label, chapter_number, delta,
+        SELECT happened_at, kind, label, chapter_count, delta,
                SUM(delta) OVER (ORDER BY happened_at, kind, source_id
                                 ROWS UNBOUNDED PRECEDING) AS balance_after
           FROM events
@@ -95,10 +98,12 @@ def get_statement(db, user_id):
 
 def get_books(db, user_id):
     """Return the kid's books with the number of chapters logged in each."""
-    # LEFT JOIN so a book with nothing logged yet still appears, at zero.
+    # LEFT JOIN so a book with nothing logged yet still appears, at zero. The
+    # figure is the sum of what each entry was worth, not the number of entries:
+    # three chapters logged in one sitting is 3, not 1.
     return db.execute(
         """
-        SELECT b.id, b.title, COUNT(c.id) AS chapter_count
+        SELECT b.id, b.title, COALESCE(SUM(c.chapter_count), 0) AS chapter_count
           FROM books b
           LEFT JOIN chapters c ON c.book_id = b.id
          WHERE b.user_id = ?
@@ -134,21 +139,21 @@ def books():
 @bp.route("/chapters/log", methods=("GET", "POST"))
 @login_required
 def log_chapter():
-    """Log a chapter, creating the book first when a new title was typed."""
+    """Log a number of chapters, creating the book first for a new title."""
     db = get_db()
     kid_id = g.user["id"]
 
     if request.method == "POST":
         choice = request.form.get("book_id", "new")
         typed = request.form.get("title", "")
-        raw_number = request.form.get("chapter_number", "").strip()
+        raw_count = request.form.get("chapter_count", "").strip()
         error = None
 
         # isdigit() rejects empty, negative, decimal and non-numeric input in
-        # one go, so a bad chapter number becomes a message and not the CHECK
-        # constraint or an int() crash.
-        if not raw_number.isdigit() or int(raw_number) < 1:
-            error = "Chapter number must be a whole number of 1 or more."
+        # one go, so a bad count becomes a message and not the CHECK constraint
+        # or an int() crash.
+        if not raw_count.isdigit() or int(raw_count) < 1:
+            error = "How many chapters must be a whole number of 1 or more."
 
         # Collapsed here because COLLATE NOCASE cannot see a double space or a
         # leading one, so the UNIQUE below would happily store 'Wings  of Fire'
@@ -204,15 +209,16 @@ def log_chapter():
             if error is None:
                 try:
                     db.execute(
-                        "INSERT INTO chapters (book_id, chapter_number) VALUES (?, ?)",
-                        (book_id, int(raw_number)),
+                        "INSERT INTO chapters (book_id, chapter_count) VALUES (?, ?)",
+                        (book_id, int(raw_count)),
                     )
                 except sqlite3.IntegrityError:
-                    # Both inserts share one transaction, so this also undoes the
-                    # book when this request created one: a refused chapter never
-                    # leaves a stray empty book on the shelf.
+                    # Nothing on chapters is unique any more, so this is only
+                    # reachable if a row breaks a constraint some other way.
+                    # It rolls back because the book insert shares this
+                    # transaction, so a failed entry leaves no stray empty book.
                     db.rollback()
-                    error = f"Chapter {raw_number} of that book is already logged."
+                    error = "That entry could not be saved. Try again."
                 else:
                     db.commit()
                     return redirect(url_for("wallet.index"))

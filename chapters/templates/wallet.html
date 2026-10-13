@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My wallet - Chapter Cards{% endblock %}
+{% block title %}My wallet - Pages for Pokemon{% endblock %}
 
 {% block content %}
   <h1 class="h3 mb-4">My wallet</h1>
@@ -14,7 +14,7 @@
   </div>
 
   <div class="d-flex flex-wrap gap-2 mb-4">
-    <a class="btn btn-primary" href="{{ url_for('wallet.log_chapter') }}">Log a chapter</a>
+    <a class="btn btn-primary" href="{{ url_for('wallet.log_chapter') }}">Log reading</a>
     <a class="btn btn-outline-secondary" href="{{ url_for('wallet.books') }}">My books</a>
   </div>
 
@@ -38,7 +38,9 @@
               <td class="text-nowrap text-body-secondary">{{ event["happened_at"] }}</td>
               <td>
                 {% if event["kind"] == "chapter" %}
-                  Chapter {{ event["chapter_number"] }} of {{ event["label"] }}
+                  {% set n = event["chapter_count"] %}
+                  {% set plural = "" if n == 1 else "s" %}
+                  Read {{ n }} chapter{{ plural }} of {{ event["label"] }}
                 {% else %}
                   Bought {{ event["label"] }}
                 {% endif %}

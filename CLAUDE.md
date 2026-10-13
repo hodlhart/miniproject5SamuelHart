@@ -1,4 +1,4 @@
-# Mini Project 5 - Chapter Cards
+# Mini Project 5 - Pages for Pokemon
 
 A family app. Kids read books, earn chapters as currency, and spend them on
 physical Pokemon cards from their parents' inventory.

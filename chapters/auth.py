@@ -17,28 +17,56 @@ from flask import (
     session,
     url_for,
 )
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 
 from .db import get_db
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
+@bp.route("/")
+def picker():
+    """Render the reader list, where a kid starts reading without a password."""
+    readers = get_db().execute(
+        "SELECT id, username FROM users"
+        " WHERE role = 'kid' ORDER BY username COLLATE NOCASE"
+    ).fetchall()
+    return render_template("auth/picker.html", readers=readers)
+
+
+@bp.route("/read-as/<int:user_id>", methods=("POST",))
+def read_as(user_id):
+    """Start a reader's session. No password, which is the point of the app."""
+    # Scoped to role = 'kid' inside the query itself, so this route can never be
+    # used to walk into a parent account and skip the password: the row is simply
+    # not found. POST only, so a stray image tag on another page cannot sign
+    # someone in as a kid either.
+    reader = get_db().execute(
+        "SELECT id, username FROM users WHERE id = ? AND role = 'kid'", (user_id,)
+    ).fetchone()
+
+    if reader is None:
+        flash("That reader does not exist.", "danger")
+        return redirect(url_for("auth.picker"))
+
+    session.clear()
+    session["user_id"] = reader["id"]
+    flash(f"Reading as {reader['username']}.", "success")
+    return redirect(url_for("wallet.index"))
+
+
 @bp.route("/register", methods=("GET", "POST"))
 def register():
-    """Create a kid account from the form, or render the form."""
+    """Add a reader account, which takes a name and no password at all."""
     if request.method == "POST":
         # .get() rather than ["username"] so a hand-made POST missing a field
         # lands on the validation branch instead of raising KeyError.
         username = request.form.get("username", "")
-        password = request.form.get("password", "")
         db = get_db()
         error = None
 
         if not username:
-            error = "Username is required."
-        elif not password:
-            error = "Password is required."
+            error = "A name is required."
         else:
             # The friendly path: one cheap SELECT so the ordinary duplicate gets
             # a message instead of an exception. This alone cannot be trusted,
@@ -47,27 +75,30 @@ def register():
                 "SELECT id FROM users WHERE username = ?", (username,)
             ).fetchone()
             if taken is not None:
-                error = f"User {username} is already registered."
+                error = f"{username} is already a reader."
 
         if error is None:
             try:
+                # Both the role and the absent password are hardcoded and never
+                # read from the form: a posted role=parent would otherwise be
+                # trusted, and that hands the shop to any kid who edits the HTML.
+                # The schema's CHECK insists on exactly this pair.
                 db.execute(
-                    "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
-                    # role is hardcoded, never read from the form. A posted
-                    # role=parent would otherwise be trusted, and that hands the
-                    # shop management page to any kid who edits the HTML.
-                    (username, generate_password_hash(password), "kid"),
+                    "INSERT INTO users (username, password_hash, role)"
+                    " VALUES (?, NULL, 'kid')",
+                    (username,),
                 )
                 db.commit()
             except sqlite3.IntegrityError:
                 # The race the SELECT above cannot cover: a second request
-                # inserted this username between the check and this INSERT, so
-                # the UNIQUE constraint rejected it. Reported as the same
-                # message the check produces, not as a traceback.
+                # inserted this name between the check and this INSERT, so the
+                # UNIQUE constraint rejected it. Reported as the same message the
+                # check produces, not as a traceback.
                 db.rollback()
-                error = f"User {username} is already registered."
+                error = f"{username} is already a reader."
             else:
-                return redirect(url_for("auth.login"))
+                flash(f"Added {username}. Pick their name to start reading.", "success")
+                return redirect(url_for("auth.picker"))
 
         flash(error, "danger")
 
@@ -76,7 +107,7 @@ def register():
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
-    """Log a user in, or render the login form."""
+    """Sign the admin in with a username and password."""
     if request.method == "POST":
         username = request.form.get("username", "")
         password = request.form.get("password", "")
@@ -92,6 +123,11 @@ def login():
         # username were unknown when it was not.
         if user is None:
             error = "Incorrect username."
+        elif user["password_hash"] is None:
+            # A reader row carries no password at all, so this form can never
+            # sign one in. check_password_hash would raise on None rather than
+            # answer no, so this branch has to come first.
+            error = "That is a reader. Pick the name from the reader list."
         elif not check_password_hash(user["password_hash"], password):
             error = "Incorrect password."
 
@@ -100,7 +136,9 @@ def login():
             # what stops a fixed session being reused after signing in.
             session.clear()
             session["user_id"] = user["id"]
-            return redirect(url_for("wallet.index"))
+            # Parents land on the shop, which is their side of the app; the
+            # wallet belongs to the kids.
+            return redirect(url_for("shop.index"))
 
         flash(error, "danger")
 

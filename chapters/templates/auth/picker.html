@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Who is reading? - Pages for Pokemon{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-2">Who is reading?</h1>
+  <p class="text-body-secondary">
+    Pick your name to start reading. No password needed.
+  </p>
+
+  {% if readers %}
+    {# Each name is its own form posting to read-as, so picking a reader is a
+       POST and not a link that a stray image tag could trigger. #}
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      {% for reader in readers %}
+        <form method="post" action="{{ url_for('auth.read_as', user_id=reader['id']) }}">
+          <button type="submit" class="btn btn-lg btn-primary">
+            {{ reader["username"] }}
+          </button>
+        </form>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-body-secondary">No readers yet. Add the first one below.</p>
+  {% endif %}
+
+  <a class="btn btn-outline-secondary" href="{{ url_for('auth.register') }}">
+    Add a new reader
+  </a>
+
+  <p class="mt-4 text-body-secondary small">
+    A grown-up can
+    <a href="{{ url_for('auth.login') }}">log in to the shop</a>.
+  </p>
+{% endblock %}

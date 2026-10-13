@@ -40,9 +40,18 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    -- A parent signs in with a password. A kid has none at all and is picked
+    -- from the reader list instead, so this is NULL on every kid row.
+    password_hash TEXT,
     role TEXT NOT NULL CHECK (role IN ('kid', 'parent')),
-    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    -- Said here rather than left to the routes, so no route can forget it: a
+    -- parent must carry a password, a kid must not, and a row that breaks
+    -- either half cannot be written at all.
+    CHECK (
+        (role = 'parent' AND password_hash IS NOT NULL)
+        OR (role = 'kid' AND password_hash IS NULL)
+    )
 );
 
 -- One row is one book a kid is reading. The title lives here and nowhere else,
@@ -59,20 +68,23 @@ CREATE TABLE books (
     UNIQUE (user_id, title COLLATE NOCASE)
 );
 
--- One row is one chapter a kid finished. This is the earning history, and it
--- is the only record of what a kid has earned. The chapter carries no owner of
--- its own: a kid's chapters are found by joining chapters to books on book_id,
--- so a row cannot claim an owner who does not own the book.
+-- One row is one reading session: how many chapters of one book a kid finished
+-- in a sitting. This is the earning history, and it is the only record of what a
+-- kid has earned. The row carries no owner of its own: a kid's chapters are
+-- found by joining chapters to books on book_id, so a row cannot claim an owner
+-- who does not own the book.
 CREATE TABLE chapters (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     -- RESTRICT, not CASCADE: a book that still holds chapters cannot be
     -- deleted, so tidying up the book list cannot erase earned chapters.
     book_id INTEGER NOT NULL REFERENCES books (id) ON DELETE RESTRICT,
-    chapter_number INTEGER NOT NULL CHECK (chapter_number > 0),
-    logged_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
-    -- Exact, because book_id is an integer with no case to fold: the same
-    -- chapter of the same book cannot be logged twice by one kid.
-    UNIQUE (book_id, chapter_number)
+    -- How many chapters this entry is worth, not which chapter it was. There is
+    -- no chapter number any more, so there is nothing left for a uniqueness
+    -- constraint to compare: logging the same reading twice is accepted, and
+    -- every chapter figure in the app is a SUM of this column rather than a
+    -- count of rows or a literal one.
+    chapter_count INTEGER NOT NULL CHECK (chapter_count > 0),
+    logged_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
 -- One row is one physical card in the shop. Two copies of the same card are two
@@ -127,19 +139,20 @@ CREATE INDEX idx_purchases_user_id ON purchases (user_id);
 
 -- HOW TO READ A BALANCE
 --
--- Count chapters with COUNT(c.id), and drive the query from users rather than
--- from books.
+-- Sum chapter_count with SUM(c.chapter_count), and drive the query from users
+-- rather than from books.
 --
---   COUNT(c.id) skips the NULLs a LEFT JOIN introduces. COUNT(*) counts the
---   joined row instead, so a kid with one book and no chapters reads as having
---   earned 1. A wrong number, not an error, which is what makes it hard to see.
+--   SUM skips the NULLs a LEFT JOIN introduces, so a kid with a book but no
+--   chapters reads as 0. COUNT(*) would count the joined row instead and read
+--   as 1: a wrong number, not an error, which is what makes it hard to see. Wrap
+--   the SUM in COALESCE, because SUM over no rows is NULL and not 0.
 --
 --   Driven from books, a kid who owns no books matches nothing. Without a
 --   GROUP BY that still returns 0, but with one it returns no row at all and
 --   the reader gets None. The empty wallet is the first path a new kid hits.
 --
 --   SELECT u.id, u.username,
---          COUNT(c.id) AS chapters_earned,
+--          COALESCE(SUM(c.chapter_count), 0) AS chapters_earned,
 --          COALESCE((SELECT SUM(p.chapters_spent) FROM purchases p
 --                     WHERE p.user_id = u.id), 0) AS chapters_spent
 --     FROM users u
