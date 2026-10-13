@@ -136,3 +136,22 @@ def login_required(view):
         return view(**kwargs)
 
     return wrapped_view
+
+
+def parent_required(view):
+    """Wrap a view so only a signed-in parent may reach it."""
+
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for("auth.login"))
+        if g.user["role"] != "parent":
+            # A message and a redirect rather than a bare 403, so a kid who types
+            # the URL is told why. The check runs before the view does, so add,
+            # manage and toggle are out of reach by GET and POST alike, which is
+            # what stops a crafted form from skipping the page.
+            flash("That part of the shop is for parents.", "danger")
+            return redirect(url_for("shop.index"))
+        return view(**kwargs)
+
+    return wrapped_view

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Manage the shop - Chapter Cards{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-4">Manage the shop</h1>
+
+  <p class="d-flex flex-wrap gap-2 mb-4">
+    <a class="btn btn-primary" href="{{ url_for('shop.add') }}">Add cards</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('shop.index') }}">See the storefront</a>
+  </p>
+
+  {% if cards %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Card</th>
+            <th scope="col">Catalogue id</th>
+            <th scope="col">Tier</th>
+            <th scope="col" class="text-end">Price</th>
+            <th scope="col">Status</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for card in cards %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {% if card["image_url"] %}
+                    <img src="{{ card['image_url'] }}" alt=""
+                         style="width: 40px; height: 56px; object-fit: contain;">
+                  {% endif %}
+                  <span>
+                    {{ card["name"] }}
+                    <span class="text-body-secondary small d-block">
+                      {{ card["set_name"] or "Unknown set" }}
+                      {% if card["number"] %}&middot; number {{ card["number"] }}{% endif %}
+                    </span>
+                  </span>
+                </div>
+              </td>
+              <td class="text-body-secondary">{{ card["tcgdex_id"] }}</td>
+              <td><span class="badge text-bg-secondary">{{ card["tier"] }}</span></td>
+              <td class="text-end">
+                {{ card["price_chapters"] }}
+                <span class="text-body-secondary small">chapters</span>
+              </td>
+              <td>
+                {% if card["for_sale"] %}
+                  <span class="badge text-bg-success">For sale</span>
+                {% else %}
+                  <span class="badge text-bg-danger">Off sale</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <form method="post"
+                      action="{{ url_for('shop.toggle_card', card_id=card['id']) }}">
+                  {% set btn = "danger" if card["for_sale"] else "success" %}
+                  <button type="submit" class="btn btn-sm btn-outline-{{ btn }}">
+                    {{ "Take off sale" if card["for_sale"] else "Put back on sale" }}
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-body-secondary">
+      The shop is empty. <a href="{{ url_for('shop.add') }}">Add a card</a> to start.
+    </p>
+  {% endif %}
+{% endblock %}

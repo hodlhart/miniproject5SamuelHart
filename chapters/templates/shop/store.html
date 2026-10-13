@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Card shop - Chapter Cards{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-4">Card shop</h1>
+
+  {# The navbar carries no parent links yet, so the way in is here. #}
+  {% if g.user and g.user["role"] == "parent" %}
+    <p class="d-flex flex-wrap gap-2 mb-4">
+      <a class="btn btn-primary" href="{{ url_for('shop.add') }}">Add cards</a>
+      <a class="btn btn-outline-secondary" href="{{ url_for('shop.manage') }}">Manage the shop</a>
+    </p>
+  {% endif %}
+
+  {% if cards %}
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+      {% for card in cards %}
+        <div class="col">
+          <div class="card h-100">
+            {% if card["image_url"] %}
+              {# Artwork is a TCGdex URL and is never committed, per the project
+                 rules. object-fit keeps the tall card art inside the tile. #}
+              <img src="{{ card['image_url'] }}" class="card-img-top p-2"
+                   style="height: 300px; object-fit: contain;"
+                   alt="Card art for {{ card['name'] }}" loading="lazy">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center bg-body-secondary"
+                   style="height: 300px;">
+                <span class="text-body-secondary small">No artwork</span>
+              </div>
+            {% endif %}
+            <div class="card-body">
+              <h2 class="h6 card-title mb-1">{{ card["name"] }}</h2>
+              <p class="card-text small text-body-secondary mb-2">
+                {{ card["set_name"] or "Unknown set" }}
+                {% if card["number"] %} &middot; number {{ card["number"] }}{% endif %}
+              </p>
+              <p class="mb-0">
+                <span class="badge text-bg-secondary">{{ card["tier"] }}</span>
+                <span class="fw-bold ms-1">{{ card["price_chapters"] }}</span>
+                <span class="text-body-secondary">chapters</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-body-secondary">Nothing is for sale right now.</p>
+  {% endif %}
+{% endblock %}

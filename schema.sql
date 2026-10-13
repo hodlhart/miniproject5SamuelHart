@@ -79,6 +79,12 @@ CREATE TABLE chapters (
 -- rows, exactly as two physical cards are two objects.
 CREATE TABLE cards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    -- The catalogue's own identifier, for example base1-4. NOT NULL rather than
+    -- merely UNIQUE, because SQLite treats NULLs as distinct in a UNIQUE index,
+    -- so a nullable column would let any number of id-less rows duplicate each
+    -- other while the real duplicate was correctly refused. Every card in this
+    -- shop comes from the catalogue, so the schema says so.
+    tcgdex_id TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     set_name TEXT,
     number TEXT,

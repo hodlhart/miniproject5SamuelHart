@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Add cards - Chapter Cards{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-4">Add cards to the shop</h1>
+
+  <form method="get" class="row g-2 align-items-end mb-4">
+    <div class="col-12 col-md-4">
+      <label for="name" class="form-label">Card name</label>
+      <input type="text" class="form-control" id="name" name="name"
+             value="{{ searched }}" placeholder="charizard">
+    </div>
+    <div class="col-12 col-md-4">
+      <label for="set" class="form-label">Set id (optional)</label>
+      <input type="text" class="form-control" id="set" name="set" value="{{ set_id }}"
+             placeholder="base1" aria-describedby="set-help">
+      <div id="set-help" class="form-text">
+        The catalogue's own set code, for example base1. Leave it blank to search
+        every set.
+      </div>
+    </div>
+    <div class="col-12 col-md-auto">
+      <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+  </form>
+
+  {% if matches %}
+    <h2 class="h5">Matches</h2>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Card</th>
+            <th scope="col">Catalogue id</th>
+            <th scope="col">Tier and price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for match in matches %}
+            <tr>
+              <td>
+                {{ match["name"] }}
+                <span class="text-body-secondary">number {{ match["localId"] }}</span>
+              </td>
+              <td class="text-body-secondary">{{ match["id"] }}</td>
+              <td>
+                {# Only tcgdex_id, tier and price are posted. The name, set, number
+                   and image are re-fetched from the catalogue server-side. #}
+                <form method="post" action="{{ url_for('shop.add') }}" class="row g-1 add-card">
+                  <input type="hidden" name="tcgdex_id" value="{{ match['id'] }}">
+                  <div class="col-auto">
+                    <select class="form-select form-select-sm" name="tier"
+                            aria-label="Tier for {{ match['name'] }}">
+                      {% for tier in tier_prices %}
+                        <option value="{{ tier }}">{{ tier }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-auto">
+                    <input type="number" class="form-control form-control-sm"
+                           name="price_chapters" value="1" min="1" step="1"
+                           aria-label="Price in chapters for {{ match['name'] }}">
+                  </div>
+                  <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-success">Add</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% elif searched %}
+    <p class="text-body-secondary">No cards matched that search.</p>
+  {% endif %}
+
+  <script>
+    // Pre-fills the price box when the tier changes, which is the whole of the
+    // tier's job. Only a convenience: the posted price_chapters is what gets
+    // stored, and nothing reads a price back out of the tier.
+    const tierPrices = {{ tier_prices|tojson }};
+    document.querySelectorAll("form.add-card").forEach((form) => {
+      const tier = form.querySelector("select[name='tier']");
+      const price = form.querySelector("input[name='price_chapters']");
+      tier.addEventListener("change", () => { price.value = tierPrices[tier.value]; });
+    });
+  </script>
+{% endblock %}
