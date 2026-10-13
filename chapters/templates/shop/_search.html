@@ -1,0 +1,18 @@
+{# Shared search box. Expects endpoint, term and label in scope.
+
+   A GET form, so the term lands in the URL, a shared link reproduces the same
+   results, and the whole thing works with no JavaScript. The explicit action
+   matters on the manage page, whose URL is /shop/manage rather than /shop/. #}
+<form method="get" action="{{ url_for(endpoint) }}" class="row g-2 align-items-end mb-4">
+  <div class="col-12 col-md-6">
+    <label for="q" class="form-label">{{ label }}</label>
+    <input type="search" class="form-control" id="q" name="q" value="{{ term }}"
+           placeholder="name, set or number">
+  </div>
+  <div class="col-12 col-md-auto">
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if term %}
+      <a class="btn btn-outline-secondary" href="{{ url_for(endpoint) }}">Clear</a>
+    {% endif %}
+  </div>
+</form>

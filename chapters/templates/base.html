@@ -9,10 +9,39 @@
 </head>
 <body class="bg-body-tertiary">
 
+  {# One place that knows how a nav link is marked active. request.endpoint is
+     what the current page reports, because url_for gives no way to compare the
+     path you are on. #}
+  {% macro navlink(endpoint, label) %}
+    {% set here = request.endpoint == endpoint %}
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if here else '' }}"
+         {% if here %}aria-current="page"{% endif %}
+         href="{{ url_for(endpoint) }}">{{ label }}</a>
+    </li>
+  {% endmacro %}
+
   <nav class="navbar navbar-expand bg-dark" data-bs-theme="dark">
     <div class="container">
       <a class="navbar-brand" href="{{ url_for('auth.picker') }}">Pages for Pokemon</a>
-      <ul class="navbar-nav ms-auto">
+
+      {# A kid gets the reading side, a parent gets the stock side. Nothing else
+         links to these pages, so without this the shop is only reachable by
+         typing its URL. #}
+      <ul class="navbar-nav me-auto">
+        {% if g.user and g.user["role"] == "kid" %}
+          {{ navlink('wallet.index', 'My wallet') }}
+          {{ navlink('wallet.books', 'My books') }}
+          {{ navlink('shop.index', 'Shop') }}
+          {{ navlink('shop.my_cards', 'My cards') }}
+        {% elif g.user and g.user["role"] == "parent" %}
+          {{ navlink('shop.index', 'Shop') }}
+          {{ navlink('shop.manage', 'Manage') }}
+          {{ navlink('shop.add', 'Add cards') }}
+        {% endif %}
+      </ul>
+
+      <ul class="navbar-nav">
         {% if g.user %}
           <li class="nav-item">
             <span class="navbar-text me-3">{{ g.user["username"] }}</span>
@@ -21,12 +50,8 @@
             <a class="nav-link" href="{{ url_for('auth.logout') }}">Log out</a>
           </li>
         {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('auth.picker') }}">Who is reading?</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('auth.login') }}">Parent log in</a>
-          </li>
+          {{ navlink('auth.picker', 'Who is reading?') }}
+          {{ navlink('auth.login', 'Parent log in') }}
         {% endif %}
       </ul>
     </div>

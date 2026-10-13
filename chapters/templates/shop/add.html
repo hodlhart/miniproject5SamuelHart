@@ -12,13 +12,26 @@
              value="{{ searched }}" placeholder="charizard">
     </div>
     <div class="col-12 col-md-4">
-      <label for="set" class="form-label">Set id (optional)</label>
-      <input type="text" class="form-control" id="set" name="set" value="{{ set_id }}"
-             placeholder="base1" aria-describedby="set-help">
-      <div id="set-help" class="form-text">
-        The catalogue's own set code, for example base1. Leave it blank to search
-        every set.
-      </div>
+      <label for="set" class="form-label">Set</label>
+      {# Built from our own cached copy of the catalogue's set list, so it keeps
+         working offline. A set id is not guessable: Base Set is base1 while the
+         anniversary sets are 30th and 30th-c. Ordered by the catalogue's own
+         sequence, newest first, which is the only sequencing it offers. #}
+      <select class="form-select" id="set" name="set">
+        <option value="">Any set</option>
+        {% for item in sets %}
+          <option value="{{ item['id'] }}"
+            {% if set_id == item["id"] %}selected{% endif %}>
+            {{ item["name"] }} ({{ item["id"] }})
+          </option>
+        {% endfor %}
+      </select>
+      {% if not sets %}
+        <div class="form-text">
+          No sets cached yet. Run
+          <code>flask --app chapters refresh-sets</code> to fill this list.
+        </div>
+      {% endif %}
     </div>
     <div class="col-12 col-md-auto">
       <button type="submit" class="btn btn-primary">Search</button>
@@ -31,6 +44,7 @@
       <table class="table align-middle">
         <thead>
           <tr>
+            <th scope="col">Picture</th>
             <th scope="col">Card</th>
             <th scope="col">Catalogue id</th>
             <th scope="col">Tier and price</th>
@@ -39,6 +53,19 @@
         <tbody>
           {% for match in matches %}
             <tr>
+              <td>
+                {# The hit carries its bare image path when the catalogue has
+                   artwork for that printing, and no image key at all when it does
+                   not, so a parent can tell before adding it. #}
+                {% if match["thumb"] %}
+                  <img src="{{ match['thumb'] }}" alt="" loading="lazy"
+                       style="width: 60px; height: 84px; object-fit: contain;">
+                {% else %}
+                  <span class="text-body-secondary small">
+                    no picture in the catalogue
+                  </span>
+                {% endif %}
+              </td>
               <td>
                 {{ match["name"] }}
                 <span class="text-body-secondary">number {{ match["localId"] }}</span>

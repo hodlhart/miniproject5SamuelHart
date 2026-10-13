@@ -165,12 +165,16 @@ def load_logged_in_user():
 
 
 def login_required(view):
-    """Wrap a view so it redirects to the login page when g.user is None."""
+    """Wrap a view so a signed-out visitor is sent to the reader list."""
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for("auth.login"))
+            # The picker, not the parent's password form. This one line is what
+            # puts the reader list on every kid page for someone signed out: a
+            # kid cannot use a username and password box, and the app should open
+            # on the reader list rather than on a login they cannot fill in.
+            return redirect(url_for("auth.picker"))
         return view(**kwargs)
 
     return wrapped_view

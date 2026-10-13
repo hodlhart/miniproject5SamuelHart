@@ -118,6 +118,10 @@ def get_books(db, user_id):
 @login_required
 def index():
     """Render the wallet: the balance, and the statement behind it."""
+    if g.user["role"] != "kid":
+        # The wallet is the kid's side, and a parent has no books, so theirs
+        # would be an empty page. Sent to the shop they actually run.
+        return redirect(url_for("shop.index"))
     db = get_db()
     totals = get_totals(db, g.user["id"])
     return render_template(

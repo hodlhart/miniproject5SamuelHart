@@ -5,10 +5,15 @@
 {% block content %}
   <h1 class="h3 mb-4">Manage the shop</h1>
 
-  <p class="d-flex flex-wrap gap-2 mb-4">
-    <a class="btn btn-primary" href="{{ url_for('shop.add') }}">Add cards</a>
-    <a class="btn btn-outline-secondary" href="{{ url_for('shop.index') }}">See the storefront</a>
-  </p>
+  {% set endpoint = 'shop.manage' %}
+  {% set label = 'Search your stock' %}
+  {% include "shop/_search.html" %}
+
+  {% if term %}
+    <p class="text-body-secondary">
+      {{ total }} card{{ "" if total == 1 else "s" }} matching &ldquo;{{ term }}&rdquo;.
+    </p>
+  {% endif %}
 
   {% if cards %}
     <div class="table-responsive">
@@ -28,10 +33,10 @@
             <tr>
               <td>
                 <div class="d-flex align-items-center gap-2">
-                  {% if card["image_url"] %}
-                    <img src="{{ card['image_url'] }}" alt=""
-                         style="width: 40px; height: 56px; object-fit: contain;">
-                  {% endif %}
+                  {# Resolved for us: the cached copy, then the catalogue's URL,
+                     then a placeholder. #}
+                  <img src="{{ card['image_src'] }}" alt=""
+                       style="width: 40px; height: 56px; object-fit: contain;">
                   <span>
                     {{ card["name"] }}
                     <span class="text-body-secondary small d-block">
@@ -48,10 +53,12 @@
                 <span class="text-body-secondary small">chapters</span>
               </td>
               <td>
+                {# The badge and the button use the same two words, so they cannot
+                   read as if they disagree. #}
                 {% if card["for_sale"] %}
-                  <span class="badge text-bg-success">For sale</span>
+                  <span class="badge text-bg-success">In the shop</span>
                 {% else %}
-                  <span class="badge text-bg-danger">Off sale</span>
+                  <span class="badge text-bg-danger">Removed</span>
                 {% endif %}
               </td>
               <td class="text-end">
@@ -59,7 +66,7 @@
                       action="{{ url_for('shop.toggle_card', card_id=card['id']) }}">
                   {% set btn = "danger" if card["for_sale"] else "success" %}
                   <button type="submit" class="btn btn-sm btn-outline-{{ btn }}">
-                    {{ "Take off sale" if card["for_sale"] else "Put back on sale" }}
+                    {{ "Remove" if card["for_sale"] else "Put back" }}
                   </button>
                 </form>
               </td>
@@ -68,6 +75,12 @@
         </tbody>
       </table>
     </div>
+
+    {% include "shop/_pager.html" %}
+  {% elif term %}
+    <p class="text-body-secondary">
+      No card in your stock matches &ldquo;{{ term }}&rdquo;.
+    </p>
   {% else %}
     <p class="text-body-secondary">
       The shop is empty. <a href="{{ url_for('shop.add') }}">Add a card</a> to start.

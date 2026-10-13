@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}My cards - Pages for Pokemon{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-2">My cards</h1>
+
+  {% if cards %}
+    <p class="text-body-secondary">
+      {{ cards|length }} card{{ "" if cards|length == 1 else "s" }} in your
+      collection, newest first.
+    </p>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+      {% for card in cards %}
+        <div class="col">
+          <div class="card h-100">
+            <img src="{{ card['image_src'] }}" class="card-img-top p-2"
+                 style="height: 280px; object-fit: contain;"
+                 alt="Card art for {{ card['name'] }}" loading="lazy">
+            <div class="card-body">
+              <h2 class="h6 card-title mb-1">{{ card["name"] }}</h2>
+              <p class="card-text small text-body-secondary mb-2">
+                {{ card["set_name"] or "Unknown set" }}
+                {% if card["number"] %} &middot; number {{ card["number"] }}{% endif %}
+              </p>
+              <p class="mb-1">
+                <span class="badge text-bg-secondary">{{ card["tier"] }}</span>
+              </p>
+              <p class="mb-0 small">
+                Cost
+                <strong>{{ card["chapters_spent"] }}</strong>
+                chapter{{ "" if card["chapters_spent"] == 1 else "s" }}
+                <span class="text-body-secondary d-block">
+                  Yours since {{ card["purchased_at"] }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-body-secondary">
+      You have not bought a card yet. Log some chapters, then pick one from the
+      <a href="{{ url_for('shop.index') }}">shop</a>.
+    </p>
+  {% endif %}
+{% endblock %}

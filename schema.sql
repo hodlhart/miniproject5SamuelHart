@@ -32,6 +32,7 @@
 DROP TABLE IF EXISTS purchases;
 DROP TABLE IF EXISTS chapters;
 DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS sets;
 DROP TABLE IF EXISTS cards;
 DROP TABLE IF EXISTS users;
 
@@ -136,6 +137,22 @@ CREATE TABLE purchases (
 -- A balance reads every purchase for one kid, so that lookup gets an index.
 -- The UNIQUE on card_id already indexes the other direction.
 CREATE INDEX idx_purchases_user_id ON purchases (user_id);
+
+-- Our own copy of the catalogue's set list, so the Add-a-card dropdown works
+-- offline. It lives in this same file rather than a second database, because two
+-- files would mean two connections that can drift apart.
+--
+-- catalog_order is the set's position in the catalogue's own response, which is
+-- the ONLY sequencing the API offers: it returns sets oldest first and carries no
+-- release date. Ordering the dropdown by this descending puts the newest sets on
+-- top, so it is the catalogue's order and not a date.
+CREATE TABLE sets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    card_count INTEGER NOT NULL,
+    catalog_order INTEGER NOT NULL,
+    refreshed_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
 
 -- HOW TO READ A BALANCE
 --

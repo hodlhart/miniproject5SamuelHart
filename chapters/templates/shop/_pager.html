@@ -1,0 +1,31 @@
+{# Shared paging strip. Expects endpoint, page, last_page and term in scope.
+
+   The search term rides along, or paging after a search would silently drop it.
+   A disabled end is a plain span, so it is not a link to a page that does not
+   exist. #}
+{% if last_page > 1 %}
+  {% set qs = '&q=' ~ (term|urlencode) if term else '' %}
+  <nav aria-label="Pages">
+    <ul class="pagination">
+      <li class="page-item {{ 'disabled' if page <= 1 else '' }}">
+        {% if page > 1 %}
+          <a class="page-link"
+             href="{{ url_for(endpoint, page=page - 1) ~ qs }}">Previous</a>
+        {% else %}
+          <span class="page-link">Previous</span>
+        {% endif %}
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">Page {{ page }} of {{ last_page }}</span>
+      </li>
+      <li class="page-item {{ 'disabled' if page >= last_page else '' }}">
+        {% if page < last_page %}
+          <a class="page-link"
+             href="{{ url_for(endpoint, page=page + 1) ~ qs }}">Next</a>
+        {% else %}
+          <span class="page-link">Next</span>
+        {% endif %}
+      </li>
+    </ul>
+  </nav>
+{% endif %}
