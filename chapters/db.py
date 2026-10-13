@@ -9,6 +9,7 @@ import sqlite3
 
 import click
 from flask import current_app, g
+from werkzeug.security import generate_password_hash
 
 
 def get_db():
@@ -47,7 +48,35 @@ def init_db_command():
     click.echo("Initialized the database.")
 
 
+@click.command("create-parent")
+@click.argument("username")
+def create_parent_command(username):
+    """Create a parent account, which the web form deliberately cannot do."""
+    db = get_db()
+    # Hidden input so the password never lands in shell history or the process
+    # list, the way it would if it were a command line argument.
+    # Confirmed as well, because the prompt is hidden and there is no password
+    # reset here: a typo nobody can see would otherwise create an account no one
+    # can log into.
+    password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+
+    taken = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+    if taken is not None:
+        # ClickException prints the message and exits non-zero, so no traceback.
+        raise click.ClickException(f"User {username} is already registered.")
+
+    # Hashed the same way register does, so a parent password and a kid password
+    # are stored identically. Only the role differs.
+    db.execute(
+        "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+        (username, generate_password_hash(password), "parent"),
+    )
+    db.commit()
+    click.echo(f"Created parent {username}.")
+
+
 def init_app(app):
-    """Register the teardown handler and the init-db command on the app."""
+    """Register the teardown handler and the CLI commands on the app."""
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+    app.cli.add_command(create_parent_command)
