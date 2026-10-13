@@ -14,6 +14,9 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY="dev",
+        # The database lives in the instance folder, which is gitignored, so a
+        # checkout never carries a stale database into a run.
+        DATABASE=os.path.join(app.instance_path, "chapters.sqlite"),
     )
 
     # A config.py in the instance folder overrides the defaults above, but the
@@ -27,7 +30,10 @@ def create_app(test_config=None):
     # Creating it here keeps the SQLite file and any secrets out of version control.
     os.makedirs(app.instance_path, exist_ok=True)
 
-    from . import auth, shop, wallet
+    from . import auth, db, shop, wallet
+
+    # Wires up the teardown handler and the init-db command in one call.
+    db.init_app(app)
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(wallet.bp)
