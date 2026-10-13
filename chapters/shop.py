@@ -161,6 +161,11 @@ def index():
         SELECT id, name, set_name, number, tier, price_chapters, image_url
           FROM cards
          WHERE for_sale = 1
+           -- A card that has been bought is gone, so the shop stops offering it
+           -- and the modal disappears with it. Buying is still refused in the
+           -- handler, which is the real guarantee; this only stops the shop
+           -- showing what cannot be had.
+           AND id NOT IN (SELECT card_id FROM purchases)
          ORDER BY name COLLATE NOCASE, set_name COLLATE NOCASE, number
         """
     ).fetchall()
@@ -195,25 +200,32 @@ def buy(card_id):
         flash(f"{card['name']} is not for sale.", "danger")
         return redirect(url_for("shop.index"))
 
-    totals = get_totals(db, g.user["id"])
-    balance = totals["earned"] - totals["spent"]
-    if balance < card["price_chapters"]:
-        flash(
-            f"{card['name']} costs {card['price_chapters']} chapters and you have "
-            f"{balance}. Log another chapter first.",
-            "danger",
-        )
-        return redirect(url_for("shop.index"))
-
+    # The funds check is part of the write, so no window exists between the two
+    # for a second request to slip through. The subqueries define the balance
+    # exactly as the wallet does: chapters counted through books, minus what has
+    # been spent. If the WHERE matches nothing then no row is inserted, and that
+    # absence is the refusal.
     try:
-        db.execute(
-            "INSERT INTO purchases (user_id, card_id, chapters_spent) VALUES (?, ?, ?)",
-            # The price is copied in as it stands now, so re-pricing the card
-            # tomorrow cannot rewrite what this kid already paid. Nothing reads a
-            # price back out of the card when showing a balance.
-            (g.user["id"], card["id"], card["price_chapters"]),
+        cursor = db.execute(
+            """
+            INSERT INTO purchases (user_id, card_id, chapters_spent)
+            SELECT ?, ?, ?
+             WHERE (SELECT COUNT(*) FROM chapters c JOIN books b ON b.id = c.book_id
+                     WHERE b.user_id = ?)
+                 - (SELECT COALESCE(SUM(chapters_spent), 0) FROM purchases
+                     WHERE user_id = ?) >= ?
+            """,
+            (
+                g.user["id"],
+                card["id"],
+                # Copied in as the price stands now, so re-pricing the card
+                # tomorrow cannot rewrite what this kid already paid.
+                card["price_chapters"],
+                g.user["id"],
+                g.user["id"],
+                card["price_chapters"],
+            ),
         )
-        db.commit()
     except sqlite3.IntegrityError:
         # purchases.card_id is UNIQUE, so this card was already bought. Reported
         # as a message rather than letting the constraint raise a 500.
@@ -221,6 +233,21 @@ def buy(card_id):
         flash(f"{card['name']} has already been bought.", "danger")
         return redirect(url_for("shop.index"))
 
+    if cursor.rowcount == 0:
+        # No row went in, so the WHERE refused it for want of funds. The balance
+        # is read here only to word the message, since the insert was the
+        # guarantee and this is advice.
+        totals = get_totals(db, g.user["id"])
+        balance = totals["earned"] - totals["spent"]
+        db.rollback()
+        flash(
+            f"{card['name']} costs {card['price_chapters']} chapters and you have "
+            f"{balance}. Log another chapter first.",
+            "danger",
+        )
+        return redirect(url_for("shop.index"))
+
+    db.commit()
     flash(f"You bought {card['name']} for {card['price_chapters']} chapters.", "success")
     return redirect(url_for("wallet.index"))
 
