@@ -45,6 +45,14 @@ CREATE TABLE users (
     -- from the reader list instead, so this is NULL on every kid row.
     password_hash TEXT,
     role TEXT NOT NULL CHECK (role IN ('kid', 'parent')),
+    -- NULL means an active account. A reader is hidden rather than deleted for
+    -- two separate reasons. A delete does not merely cascade: users -> books is
+    -- ON DELETE CASCADE while books -> chapters is ON DELETE RESTRICT, so the
+    -- cascade removes their books, the RESTRICT refuses because those books
+    -- still hold chapters, and the whole statement fails. And their purchases
+    -- are what keeps the physical cards they own off the shop, so removing them
+    -- would put those cards back on sale.
+    removed_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
     -- Said here rather than left to the routes, so no route can forget it: a
     -- parent must carry a password, a kid must not, and a row that breaks

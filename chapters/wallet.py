@@ -48,19 +48,14 @@ def get_totals(db, user_id):
 def get_statement(db, user_id):
     """Return the kid's earning and spending rows, newest first."""
     # One row per event, so earnings and purchases can stack in a single table.
-    # Two details keep the running balance honest:
+    # There is no running balance column any more, so no window function: the
+    # page closes on a single total, which is the headline balance rather than a
+    # second sum of these rows.
     #
-    #   logged_at and purchased_at are local time with one-second
-    #   resolution, so a kid logging quickly gets rows that tie. ORDER BY
-    #   (happened_at, kind, source_id) is a total order even then, because
-    #   source_id is that row's primary key, so the sequence cannot shuffle
-    #   between two loads of this page.
-    #
-    #   The window accumulates in that ascending order, while the final ORDER BY
-    #   is its exact reverse, which is what puts the newest row on top without
-    #   reversing the arithmetic. ROWS UNBOUNDED PRECEDING gives each tied row
-    #   its own running figure; the default RANGE frame would give tied rows the
-    #   same figure and the column would stop adding up.
+    # logged_at and purchased_at are local time with one-second resolution, so a
+    # kid logging quickly gets rows that tie. ORDER BY (happened_at, kind,
+    # source_id) is a total order even then, because source_id is that row's
+    # primary key, so the order cannot shuffle between two loads of this page.
     return db.execute(
         """
         WITH events AS (
@@ -86,9 +81,7 @@ def get_statement(db, user_id):
               JOIN cards c ON c.id = p.card_id
              WHERE p.user_id = :user_id
         )
-        SELECT happened_at, kind, label, chapter_count, delta,
-               SUM(delta) OVER (ORDER BY happened_at, kind, source_id
-                                ROWS UNBOUNDED PRECEDING) AS balance_after
+        SELECT happened_at, kind, label, chapter_count, delta
           FROM events
          ORDER BY happened_at DESC, kind DESC, source_id DESC
         """,

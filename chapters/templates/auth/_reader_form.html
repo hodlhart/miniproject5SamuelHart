@@ -1,0 +1,14 @@
+{# One add-a-reader form, shared by the registration page and the Readers page,
+   so the two can never ask for different things or post to different places. #}
+<form method="post" action="{{ url_for('auth.register') }}"
+      class="row g-2 align-items-end">
+  <div class="col-12 col-md-6">
+    <label for="username" class="form-label">Reader's name</label>
+    {# The typed name is echoed back so a rejected form is not blank. #}
+    <input type="text" class="form-control" id="username" name="username"
+           value="{{ request.form.get('username', '') }}" required>
+  </div>
+  <div class="col-12 col-md-auto">
+    <button type="submit" class="btn btn-primary">Add reader</button>
+  </div>
+</form>

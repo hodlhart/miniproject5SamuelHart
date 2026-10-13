@@ -25,11 +25,25 @@
       </table>
     </div>
   {% else %}
-    <p class="text-body-secondary">
-      You have not started a book yet. Start one when you log your first chapter.
-    </p>
+    <div class="pp-empty mb-4">
+      <span class="pp-empty-glyph" aria-hidden="true">&#128218;</span>
+      <p class="pp-empty-title">No books yet</p>
+      <p class="pp-empty-text">
+        Start one the first time you log some reading, and it will live here.
+      </p>
+    </div>
   {% endif %}
 
-  <a class="btn btn-primary" href="{{ url_for('wallet.log_chapter') }}">Start a new book</a>
-  <a class="btn btn-outline-secondary" href="{{ url_for('wallet.index') }}">Back to my wallet</a>
+  {# One button, not two pointing at the same place, and none pointing at a page
+     the navbar already carries: My wallet is up there. Logging reading is the one
+     thing the navbar does not offer, so it is the one button left. #}
+  {% if books %}
+    <a class="btn btn-primary" href="{{ url_for('wallet.log_chapter') }}">
+      Log reading
+    </a>
+  {% else %}
+    <a class="btn btn-lg btn-primary" href="{{ url_for('wallet.log_chapter') }}">
+      Log your first reading
+    </a>
+  {% endif %}
 {% endblock %}

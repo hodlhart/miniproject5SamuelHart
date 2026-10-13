@@ -1,4 +1,8 @@
 {% extends "base.html" %}
+{# The badge comes from the same macro the tiles use, so all three pages read the
+   same tier colours from one definition. Manage gets no stripe: its rows are a
+   table, not a grid, and a stripe across a row would be the wrong shape. #}
+{% from "shop/_card_tile.html" import tier_badge %}
 
 {% block title %}Manage the shop - Pages for Pokemon{% endblock %}
 
@@ -35,8 +39,7 @@
                 <div class="d-flex align-items-center gap-2">
                   {# Resolved for us: the cached copy, then the catalogue's URL,
                      then a placeholder. #}
-                  <img src="{{ card['image_src'] }}" alt=""
-                       style="width: 40px; height: 56px; object-fit: contain;">
+                  <img src="{{ card['image_src'] }}" alt="" class="pp-thumb">
                   <span>
                     {{ card["name"] }}
                     <span class="text-body-secondary small d-block">
@@ -47,7 +50,7 @@
                 </div>
               </td>
               <td class="text-body-secondary">{{ card["tcgdex_id"] }}</td>
-              <td><span class="badge text-bg-secondary">{{ card["tier"] }}</span></td>
+              <td>{{ tier_badge(card) }}</td>
               <td class="text-end">
                 {{ card["price_chapters"] }}
                 <span class="text-body-secondary small">chapters</span>
@@ -78,12 +81,21 @@
 
     {% include "shop/_pager.html" %}
   {% elif term %}
-    <p class="text-body-secondary">
-      No card in your stock matches &ldquo;{{ term }}&rdquo;.
-    </p>
+    {# No buttons here: Manage and Add cards are both in the navbar above. #}
+    <div class="pp-empty">
+      <span class="pp-empty-glyph" aria-hidden="true">&#128269;</span>
+      <p class="pp-empty-title">No card in your stock matches &ldquo;{{ term }}&rdquo;</p>
+      <p class="pp-empty-text">
+        Try a shorter word, or clear the search to see everything.
+      </p>
+    </div>
   {% else %}
-    <p class="text-body-secondary">
-      The shop is empty. <a href="{{ url_for('shop.add') }}">Add a card</a> to start.
-    </p>
+    <div class="pp-empty">
+      <span class="pp-empty-glyph" aria-hidden="true">&#128230;</span>
+      <p class="pp-empty-title">The shop is empty</p>
+      <p class="pp-empty-text">
+        Add a card with the Add cards tab above and it will show up here.
+      </p>
+    </div>
   {% endif %}
 {% endblock %}

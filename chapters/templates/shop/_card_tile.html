@@ -1,0 +1,41 @@
+{# The card tile, in one place.
+
+   store.html and My cards render the same tile, and they had already drifted once:
+   the shop carried the tier stripe and My cards did not, so a kid saw the badge on
+   one page and not the colour that marks the tier on the other. This is the trick
+   _pager.html and _search.html already use on the two list pages: the shared shape
+   lives in one file, and the part that genuinely differs is handed in by the
+   caller through a call block.
+
+   card_tile renders the tile down to its tier badge. The caller supplies whatever
+   sits underneath it, which is the price line on the shop and the cost with the
+   date on My cards. Manage uses tier_badge on its own, because its rows are a
+   table rather than a grid and a stripe would be wrong there. #}
+
+{% macro tier_badge(card) %}
+  <span class="badge tier-{{ card['tier'] }}">{{ card["tier"] }}</span>
+{% endmacro %}
+
+{% macro card_tile(card) %}
+  <div class="col">
+    {# The stripe on the tile and the badge below read the same variable, so the
+       two can never show different tiers. #}
+    <div class="card h-100 tier-card tier-{{ card['tier'] }}">
+      {# image_src is already resolved: the local cached copy if there is one,
+         then the catalogue's own URL, then a placeholder. A card with no artwork
+         gets the placeholder, never a broken image icon. The box and its fit live
+         in app.css as .pp-art. #}
+      <img src="{{ card['image_src'] }}" class="pp-art"
+           alt="Card art for {{ card['name'] }}" loading="lazy">
+      <div class="card-body d-flex flex-column">
+        <h2 class="h6 card-title mb-1">{{ card["name"] }}</h2>
+        <p class="card-text small text-body-secondary mb-2">
+          {{ card["set_name"] or "Unknown set" }}
+          {% if card["number"] %} &middot; number {{ card["number"] }}{% endif %}
+        </p>
+        <p class="mb-1">{{ tier_badge(card) }}</p>
+        {{ caller() }}
+      </div>
+    </div>
+  </div>
+{% endmacro %}

@@ -1,22 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Add a new reader - Pages for Pokemon{% endblock %}
+{% block title %}Add a reader - Pages for Pokemon{% endblock %}
 
 {% block content %}
-  <h1 class="h3 mb-2">Add a new reader</h1>
+  <h1 class="h3 mb-2">Add a reader</h1>
   <p class="text-body-secondary">
     A name is all it takes. Readers have no password, they just pick their name
-    from the list.
+    from the list on the front page.
   </p>
 
-  <form method="post">
-    <div class="mb-3">
-      <label for="username" class="form-label">Name</label>
-      {# The typed name is echoed back so a rejected form is not blank. #}
-      <input type="text" class="form-control" id="username" name="username"
-             value="{{ request.form.get('username', '') }}" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Add reader</button>
-    <a class="btn btn-outline-secondary" href="{{ url_for('auth.picker') }}">Cancel</a>
-  </form>
+  {% include "auth/_reader_form.html" %}
 {% endblock %}

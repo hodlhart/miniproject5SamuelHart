@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Readers - Pages for Pokemon{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-2">Readers</h1>
+  <p class="text-body-secondary">
+    Add the kids who read here, and take one off the list when you need to. Taking
+    a reader off the list never deletes them: their books, their chapters and the
+    cards they have bought all stay put, and the balance stays too.
+  </p>
+
+  {% include "auth/_reader_form.html" %}
+
+  <h2 class="h5 mt-5">On the list</h2>
+  {% if readers %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Reader</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for reader in readers %}
+            <tr>
+              <td>{{ reader["username"] }}</td>
+              <td class="text-end">
+                <form method="post"
+                      action="{{ url_for('auth.remove_reader', user_id=reader['id']) }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    Take off the list
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="pp-empty mb-4">
+      <span class="pp-empty-glyph" aria-hidden="true">&#128100;</span>
+      <p class="pp-empty-title">No readers yet</p>
+      <p class="pp-empty-text">Add the first one above and their name shows up here.</p>
+    </div>
+  {% endif %}
+
+  {% if removed %}
+    {# Kept visible on purpose, so taking the wrong reader off the list is one
+       click to undo rather than a problem. #}
+    <h2 class="h5 mt-5">Taken off the list</h2>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Reader</th>
+            <th scope="col">Taken off</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for reader in removed %}
+            <tr>
+              <td class="text-body-secondary">{{ reader["username"] }}</td>
+              <td class="text-body-secondary">{{ reader["removed_at"] }}</td>
+              <td class="text-end">
+                <form method="post"
+                      action="{{ url_for('auth.restore_reader', user_id=reader['id']) }}">
+                  <button type="submit" class="btn btn-sm btn-outline-success">
+                    Put back
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

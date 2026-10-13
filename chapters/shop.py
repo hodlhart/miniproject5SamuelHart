@@ -74,6 +74,11 @@ CARD_COLUMNS = (
 
 TIMEOUT_SECONDS = 10
 
+# A catalogue search can return a hundred hits, and every one of them fetches its
+# own thumbnail from the catalogue, so one search could pull about a megabyte of
+# images. The list is capped and says so, rather than truncating in silence.
+SEARCH_RESULT_LIMIT = 40
+
 # The tier is a label. These figures pre-fill the price box as a convenience and
 # do nothing else: cards.price_chapters is what is stored and charged, and no
 # code may read a price back out of the tier.
@@ -200,6 +205,15 @@ def clamp_page(raw, total, page_size):
     return min(max(page, 1), last_page), last_page
 
 
+def like_pattern(term):
+    """Return a LIKE pattern that treats the search term as literal text."""
+    # % and _ are wildcards to LIKE, so a search for "%" matched every card and a
+    # search for "_" matched any single character. Backslash escapes them, and it
+    # is escaped first because it is the escape character itself.
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 def card_filter(term, only_offered):
     """Return (where_sql, params) for a card search over the shop or the stock."""
     conditions = []
@@ -211,8 +225,14 @@ def card_filter(term, only_offered):
         conditions.append("for_sale = 1")
         conditions.append("id NOT IN (SELECT card_id FROM purchases)")
     if term:
-        conditions.append("(name LIKE :like OR set_name LIKE :like OR number LIKE :like)")
-        params["like"] = f"%{term}%"
+        # ESCAPE is what makes the backslashes from like_pattern mean anything,
+        # so a term containing a real % or _ is matched as text.
+        conditions.append(
+            "(name LIKE :like ESCAPE '\\'"
+            " OR set_name LIKE :like ESCAPE '\\'"
+            " OR number LIKE :like ESCAPE '\\')"
+        )
+        params["like"] = like_pattern(term)
     if not conditions:
         return "", params
     return " WHERE " + " AND ".join(conditions), params
@@ -463,6 +483,7 @@ def add():
     name = request.args.get("name", "").strip()
     set_id = request.args.get("set", "").strip()
     matches = None
+    found_total = None
 
     if name:
         params = {"name": name}
@@ -474,17 +495,19 @@ def add():
             flash(f"Could not search the card catalogue: {exc}", "danger")
         else:
             found = found if isinstance(found, list) else []
+            found_total = len(found)
             # A hit carries its bare image path when the catalogue has artwork for
             # that printing, and no image key at all when it does not, so the
             # parent can see which one they are picking before adding it.
             matches = [
                 dict(hit, thumb=remote_picture(hit.get("image"), LOCAL_PICTURE))
-                for hit in found
+                for hit in found[:SEARCH_RESULT_LIMIT]
             ]
 
     return render_template(
         "shop/add.html",
         matches=matches,
+        found_total=found_total,
         searched=name,
         set_id=set_id,
         # Ordered by the catalogue's own sequence, newest first, so a fresh

@@ -6,7 +6,13 @@
 
 import os
 
-from flask import Flask
+from flask import Flask, send_from_directory, url_for
+
+# An optional local background picture, looked for in the instance folder under
+# any of these names. It is not committed and nothing depends on it: the app is
+# complete and correct without one, which is why a fresh clone looks right rather
+# than broken. Only a name is looked for, and nothing is ever read out of it.
+BACKGROUND_NAMES = ("background.jpg", "background.jpeg", "background.png")
 
 
 def create_app(test_config=None):
@@ -39,4 +45,37 @@ def create_app(test_config=None):
     app.register_blueprint(wallet.bp)
     app.register_blueprint(shop.bp)
 
+    register_background(app)
+
     return app
+
+
+def background_name(app):
+    """Return the file name of the local background picture, or None."""
+    for name in BACKGROUND_NAMES:
+        if os.path.isfile(os.path.join(app.instance_path, name)):
+            return name
+    return None
+
+
+def register_background(app):
+    """Add the optional background route and its template variable to the app."""
+
+    @app.route("/background")
+    def background():
+        """Serve the optional local background, or 404 when there is none."""
+        name = background_name(app)
+        if name is None:
+            # Nothing to serve. The pages do not reference this route unless the
+            # file is there, so a 404 here is only ever a hand-typed URL.
+            return app.response_class(status=404)
+        # send_from_directory builds the path itself and refuses anything that
+        # resolves outside the folder, the same as the cached card pictures.
+        return send_from_directory(app.instance_path, name)
+
+    @app.context_processor
+    def inject_background():
+        """Offer the background URL to every template, or None when absent."""
+        if background_name(app) is None:
+            return {"background_url": None}
+        return {"background_url": url_for("background")}

@@ -1,0 +1,511 @@
+/* Pages for Pokemon: the app's own look, layered on top of Bootstrap.
+ *
+ * Bootstrap stays the base and nothing here replaces it. The palette and the
+ * body size are set through Bootstrap's own custom properties, so its components
+ * pick them up, and individual components are re-pointed at the palette rather
+ * than reimplemented.
+ *
+ * Two references, which agree more than they look. The back of a card: a deep
+ * royal blue field, a thin rule inset from the edge, one warm accent. And a
+ * comic-book poster in bright quadrants on black: bold fills, thick black
+ * outlines, hard offset shadows. The poster's yellow is the card's rule, and its
+ * cyan sits next to the card's mid blue, so one palette carries both.
+ *
+ * Not the artwork and not the wordmark of either: no logo, no lettering, and no
+ * characters anywhere in the chrome.
+ *
+ * The page stays light and the loud treatment sits on components. Where a colour
+ * would need a scrim behind it to stay legible, it is in the wrong place: that is
+ * why the yellow, the cyan and the green are never body text on cream, where they
+ * measure 1.38:1, 2.19:1 and 2.22:1. The red is the exception at 4.68:1, so it is
+ * allowed as text and only that one is.
+ *
+ * THE HALFTONE IS OUT. It was tried at 10% black on the empty states and as a
+ * deeper-blue dot wash on the balance card, and at that strength it read as a
+ * rendering artifact rather than as a decision: it was noticed as a question about
+ * the design rather than as part of it. Making it loud enough to be deliberate
+ * would have put dots behind the balance figure or behind a badge label, and this
+ * file's own rule is that texture does not go behind text. So the treatment is
+ * carried by the two things that cannot be mistaken for an artifact, the thick
+ * black outline and the hard offset shadow, and nothing in here draws a dot
+ * pattern.
+ *
+ * Every colour pair used for text is measured below, and the ratio is in the
+ * comment beside it. Ratios that clear 4.5:1 carry a number; the ones that
+ * cannot say why they are not used as text.
+ */
+
+:root {
+  /* The poster's four bright quadrants, plus its black and its light. */
+  --pp-yellow: #F5CE3E;      /* the balance, the primary action, full_art */
+  --pp-cyan: #3FB4D4;        /* the normal tier, the secondary blue */
+  --pp-green: #6BB84A;       /* success, as a fill */
+  --pp-red: #CE3020;         /* the ex tier, and negative figures */
+  /* Moved from the poster's #DE3A2C: that red measures 4.42:1 carrying white and
+     4.01:1 as text on cream, both short of the 4.5:1 needed. One step deeper
+     clears both, 5.16:1 and 4.68:1, so a single value does the badge and the
+     figure. */
+  --pp-green-deep: #3D7628;  /* green as text: 4.98:1 on cream */
+  --pp-black: #101010;       /* outlines, borders, halftone dots */
+
+  /* The card back, kept: the field, its deeper state, and the light behind. */
+  --pp-blue: #1B4E9B;
+  --pp-blue-deep: #173F7D;
+  --pp-cream: #FBF3E4;
+  --pp-white: #FFFFFF;
+  --pp-ink: #16233A;
+  --pp-muted: #4E5D78;
+  --pp-nav-dim: #DEEAF3;
+
+  /* Derived on purpose, and only ever a border or a band, never text. */
+  --pp-cyan-pale: #E3F3F8;
+  --pp-yellow-pale: #FFF0C4;
+  --pp-line: rgba(16, 16, 16, 0.15);
+  --pp-dot: rgba(16, 16, 16, 0.10);
+  /* The cream at 88%, laid over the optional background picture so text stays
+     legible on top of it. Measured over a pure black photograph: body text
+     10.88:1, muted text 4.60:1. */
+  --pp-scrim: rgba(251, 243, 228, 0.88);
+
+  /* The treatment: a hard shadow with no blur, offset down and right, which is
+     the second strongest cue from the poster after the outline. */
+  --pp-shadow: 6px 6px 0 var(--pp-black);
+  --pp-shadow-sm: 3px 3px 0 var(--pp-black);
+
+  /* Bootstrap's own variables. ink on cream 14.26:1, on white 15.72:1,
+     muted on cream 6.02:1. */
+  --bs-body-bg: var(--pp-cream);
+  --bs-body-color: var(--pp-ink);
+  /* 18px instead of 16: this gets read on a tablet, at arm's length. */
+  --bs-body-font-size: 1.125rem;
+  --bs-border-radius: 1rem;
+  --bs-border-radius-lg: 1.4rem;
+  --bs-secondary-color: var(--pp-muted);
+  /* The card blue, not the cyan: cyan is 2.19:1 on cream, far too low for a
+     link, so it stays a fill and the blue carries the text. Blue is 7.30:1. */
+  --bs-link-color: var(--pp-blue);
+  --bs-link-hover-color: var(--pp-blue-deep);
+  --bs-link-color-rgb: 27, 78, 155;
+}
+
+body {
+  /* The light side, warmed. Ink holds up on both washes: 13.78:1 on the pale
+     cyan, and on cream 14.26:1. */
+  background-image: radial-gradient(circle at 12% 0%, var(--pp-cyan-pale) 0%, transparent 45%),
+                    radial-gradient(circle at 88% 8%, var(--pp-yellow-pale) 0%, transparent 40%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+h1, h2, h3, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Chunky controls: a child's thumb needs a target bigger than a text link, and
+   the poster wants shapes with weight. */
+.btn {
+  --bs-btn-padding-y: 0.7rem;
+  --bs-btn-padding-x: 1.35rem;
+  --bs-btn-border-radius: 1rem;
+  --bs-btn-font-weight: 800;
+  --bs-btn-border-width: 3px;
+  border: 3px solid var(--pp-black);
+  box-shadow: var(--pp-shadow-sm);
+}
+
+.btn-lg {
+  --bs-btn-padding-y: 1rem;
+  --bs-btn-padding-x: 1.8rem;
+  --bs-btn-font-size: 1.3rem;
+  --bs-btn-border-radius: 1.25rem;
+}
+
+/* Pressing a button pushes it into its own shadow, which is what makes the
+   offset read as depth rather than as a drop shadow. */
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--pp-black);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--pp-black);
+  outline-offset: 2px;
+}
+
+/* The primary action is the poster yellow with black on it: 12.49:1. The hover
+   and pressed states keep the same fill rather than introducing a second yellow:
+   the movement into the offset shadow is the feedback, and it keeps the palette
+   to one value per hue. */
+.btn-primary {
+  --bs-btn-color: var(--pp-black);
+  --bs-btn-bg: var(--pp-yellow);
+  --bs-btn-border-color: var(--pp-black);
+  --bs-btn-hover-color: var(--pp-black);
+  --bs-btn-hover-bg: var(--pp-yellow);
+  --bs-btn-hover-border-color: var(--pp-black);
+  --bs-btn-active-color: var(--pp-black);
+  --bs-btn-active-bg: var(--pp-yellow);
+  --bs-btn-active-border-color: var(--pp-black);
+  --bs-btn-disabled-color: var(--pp-black);
+  --bs-btn-disabled-bg: var(--pp-yellow);
+  --bs-btn-disabled-border-color: var(--pp-black);
+}
+
+/* Success is the poster green as a fill, carrying black at 7.77:1. */
+.btn-success {
+  --bs-btn-color: var(--pp-black);
+  --bs-btn-bg: var(--pp-green);
+  --bs-btn-border-color: var(--pp-black);
+  --bs-btn-hover-color: var(--pp-black);
+  --bs-btn-hover-bg: var(--pp-green);
+  --bs-btn-hover-border-color: var(--pp-black);
+  --bs-btn-active-color: var(--pp-black);
+  --bs-btn-active-bg: var(--pp-green);
+}
+
+/* Outlines keep the hue on the border and the ink in the text, because none of
+   the bright hues is legible as text on cream. Red is the one exception: 4.68:1
+   is enough, so a Remove button can carry it. */
+.btn-outline-success {
+  --bs-btn-color: var(--pp-ink);
+  --bs-btn-border-color: var(--pp-black);
+  --bs-btn-hover-color: var(--pp-black);
+  --bs-btn-hover-bg: var(--pp-green);
+  --bs-btn-hover-border-color: var(--pp-black);
+  --bs-btn-active-color: var(--pp-black);
+  --bs-btn-active-bg: var(--pp-green);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--pp-red);
+  --bs-btn-border-color: var(--pp-black);
+  --bs-btn-hover-color: var(--pp-white);
+  --bs-btn-hover-bg: var(--pp-red);
+  --bs-btn-hover-border-color: var(--pp-black);
+  --bs-btn-active-color: var(--pp-white);
+  --bs-btn-active-bg: var(--pp-red);
+}
+
+.btn-danger {
+  --bs-btn-color: var(--pp-white);
+  --bs-btn-bg: var(--pp-red);
+  --bs-btn-border-color: var(--pp-black);
+  --bs-btn-hover-color: var(--pp-white);
+  --bs-btn-hover-bg: var(--pp-red);
+  --bs-btn-hover-border-color: var(--pp-black);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--pp-muted);
+  --bs-btn-border-color: var(--pp-black);
+  --bs-btn-hover-color: var(--pp-white);
+  --bs-btn-hover-bg: var(--pp-muted);
+  --bs-btn-hover-border-color: var(--pp-black);
+}
+
+/* The flash alert is the first thing a kid sees after picking their name, so it
+   belongs to the treatment as much as the buttons do: thick black border and a
+   hard offset shadow. Each category is a palette fill with the ink that clears
+   4.5:1 on it: black on yellow 12.49:1, black on green 7.77:1, black on cyan
+   7.87:1, white on red 5.16:1. */
+.alert {
+  --bs-alert-border-width: 3px;
+  --bs-alert-border-color: var(--pp-black);
+  --bs-alert-border-radius: var(--bs-border-radius);
+  border: 3px solid var(--pp-black);
+  box-shadow: var(--pp-shadow-sm);
+  font-weight: 700;
+}
+
+.alert-success {
+  --bs-alert-color: var(--pp-black);
+  --bs-alert-bg: var(--pp-green);
+  --bs-alert-link-color: var(--pp-black);
+}
+
+.alert-danger {
+  --bs-alert-color: var(--pp-white);
+  --bs-alert-bg: var(--pp-red);
+  --bs-alert-link-color: var(--pp-white);
+}
+
+.alert-warning {
+  --bs-alert-color: var(--pp-black);
+  --bs-alert-bg: var(--pp-yellow);
+  --bs-alert-link-color: var(--pp-black);
+}
+
+.alert-info,
+.alert-primary,
+.alert-secondary {
+  --bs-alert-color: var(--pp-black);
+  --bs-alert-bg: var(--pp-cyan);
+  --bs-alert-link-color: var(--pp-black);
+}
+
+/* Bootstrap's close mark is a black glyph, which is invisible on the red fill,
+   so it is inverted on the one category that carries white. */
+.alert-danger .btn-close {
+  filter: invert(1) grayscale(1) brightness(2);
+}
+
+/* The navbar is the blue field with the rule inset beneath it, and the poster's
+   hard black line under that. Links are 8.05:1 on the field, and the current tab
+   is marked with an underline as well as colour, so it does not lean on hue. */
+.pp-navbar {
+  background-color: var(--pp-blue);
+  border-bottom: 6px solid var(--pp-yellow);
+  box-shadow: 0 4px 0 var(--pp-black);
+}
+
+.pp-navbar .navbar-brand {
+  font-weight: 900;
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+}
+
+.pp-navbar .nav-link {
+  font-weight: 800;
+  color: var(--pp-nav-dim);
+}
+
+.pp-navbar .nav-link:hover,
+.pp-navbar .nav-link:focus {
+  color: var(--pp-white);
+}
+
+.pp-navbar .nav-link.active {
+  color: var(--pp-white);
+  text-decoration: underline;
+  text-decoration-color: var(--pp-yellow);
+  text-decoration-thickness: 0.22rem;
+  text-underline-offset: 0.4rem;
+}
+
+.pp-navbar .navbar-text {
+  color: var(--pp-white);
+  font-weight: 800;
+}
+
+/* The balance gets the card back's own arrangement: the blue field, the rule
+   inset from the edge, the figure in the rule's colour. Yellow on the blue field
+   is 5.28:1. No texture behind it: the halftone note above the palette says why. */
+.pp-balance {
+  background-color: var(--pp-blue);
+  color: var(--pp-yellow);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: inset 0 0 0 4px var(--pp-yellow), var(--pp-shadow);
+  padding: 1.75rem 2rem 2rem;
+}
+
+/* The two figures the balance is made of, filling what was dead space to its
+   right. Yellow on the field is 5.28:1 and the cream labels are 7.30:1. */
+.pp-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.pp-stat-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--pp-cream);
+}
+
+.pp-stat-number {
+  font-weight: 900;
+  font-size: 1.9rem;
+  line-height: 1.15;
+  color: var(--pp-yellow);
+}
+
+.pp-balance-label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.pp-balance-number {
+  font-size: clamp(3.5rem, 15vw, 7rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.25rem;
+}
+
+/* The tiers carry meaning: one hue each, on the badge and as the tile's top
+   stripe, so what a card costs is legible at a glance. Black on cyan 7.87:1,
+   white on red 5.16:1, black on yellow 12.49:1. Nothing is white on yellow,
+   which is 1.52:1. */
+.tier-normal {
+  --pp-tier: var(--pp-cyan);
+  --pp-tier-ink: var(--pp-black);
+}
+
+.tier-ex {
+  --pp-tier: var(--pp-red);
+  --pp-tier-ink: var(--pp-white);
+}
+
+.tier-full_art {
+  --pp-tier: var(--pp-yellow);
+  --pp-tier-ink: var(--pp-black);
+}
+
+.badge.tier-normal,
+.badge.tier-ex,
+.badge.tier-full_art {
+  background-color: var(--pp-tier);
+  color: var(--pp-tier-ink);
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 0.5rem 0.85rem;
+  border: 2px solid var(--pp-black);
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  box-shadow: 2px 2px 0 var(--pp-black);
+}
+
+/* Tiles: the thick black outline is the strongest single cue from the poster. */
+.card {
+  border: 3px solid var(--pp-black);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: var(--pp-shadow);
+  overflow: hidden;
+}
+
+/* The stripe and the badge read the same variable, so they cannot disagree. */
+.card.tier-card {
+  border: 3px solid var(--pp-black);
+  border-top: 11px solid var(--pp-tier);
+}
+
+/* The tile's art, in a box of the card's own proportions. A contain fit inside a
+   box of the same aspect ratio fills it edge to edge, so the art is never
+   distorted and never letterboxed, and every tile in a grid ends up the same
+   height. The box is narrower than the tile, which is what stops the tile from
+   being mostly empty padding around a portrait card scan. */
+.pp-art {
+  display: block;
+  width: 56%;
+  margin: 0.9rem auto 0;
+  aspect-ratio: 5 / 7;
+  object-fit: contain;
+  background-color: var(--pp-cyan-pale);
+  border: 2px solid var(--pp-black);
+  border-radius: 0.8rem;
+}
+
+/* The small picture beside a row in Manage, the same shape at a row's height. */
+.pp-thumb {
+  width: 44px;
+  height: 62px;
+  object-fit: contain;
+  background-color: var(--pp-cyan-pale);
+  border: 2px solid var(--pp-black);
+  border-radius: 0.4rem;
+}
+
+.card-title {
+  font-weight: 800;
+}
+
+.pp-price {
+  color: var(--pp-ink);
+  font-weight: 900;
+}
+
+/* The modal is a component too, so it takes the same outline and offset. */
+.modal-content {
+  border: 3px solid var(--pp-black);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: var(--pp-shadow);
+}
+
+/* Tables take the same treatment as everything else rather than sitting halfway
+   between flat and loud: the black outline and hard shadow go on the scrolling
+   wrapper, which clips the corners with it, and the header becomes a bold band.
+   White on that band is 8.05:1. */
+.table-responsive {
+  background-color: var(--pp-white);
+  border: 3px solid var(--pp-black);
+  border-radius: var(--bs-border-radius);
+  box-shadow: var(--pp-shadow-sm);
+}
+
+.table-responsive > .table {
+  margin-bottom: 0;
+}
+
+/* Roomier rows: a table a child can point at without hitting the row below. */
+.table > :not(caption) > * > * {
+  padding: 0.85rem 0.8rem;
+}
+
+.table > tbody > tr:last-child > * {
+  border-bottom: 0;
+}
+
+.table > thead th {
+  background-color: var(--pp-blue);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--pp-white);
+  border-bottom: 3px solid var(--pp-black);
+}
+
+.pp-change {
+  font-weight: 900;
+  font-size: 1.15rem;
+}
+
+.pp-total-row {
+  font-weight: 900;
+  font-size: 1.15rem;
+}
+
+/* Earned against spent. Bootstrap's own text-success (#198754) and text-danger
+   (#dc3545) measure 4.30:1 and 4.29:1 on cream, both short of 4.5:1, so the
+   palette's own are used instead: the deeper green at 4.98:1 and the red at
+   4.68:1. The red here is the same value the ex tier uses, and the two stay
+   apart by treatment rather than hue: red text on cream here, a red pill
+   carrying white there. They never share a page either, since the ledger is the
+   wallet and the tier badges are the shop, My cards and Manage. */
+.pp-up { color: var(--pp-green-deep); }
+
+.pp-down { color: var(--pp-red); }
+
+/* Empty states invite the next thing to do. Flat white, no texture: see the
+   note about the halftone above the palette. */
+.pp-empty {
+  background-color: var(--pp-white);
+  border: 3px solid var(--pp-black);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: var(--pp-shadow);
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+}
+
+.pp-empty-glyph {
+  display: block;
+  font-size: 2.75rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.pp-empty-title {
+  font-weight: 900;
+  font-size: 1.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.pp-empty-text {
+  color: var(--pp-muted);
+  margin-bottom: 1.25rem;
+}

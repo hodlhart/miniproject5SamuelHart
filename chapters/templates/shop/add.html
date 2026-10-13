@@ -40,6 +40,14 @@
 
   {% if matches %}
     <h2 class="h5">Matches</h2>
+    {% if found_total > matches|length %}
+      {# Said out loud rather than truncating in silence, so a parent knows the
+         list is partial and how to narrow it. #}
+      <p class="text-body-secondary">
+        Found {{ found_total }} cards. Showing the first {{ matches|length }};
+        the rest are not shown. Add a set or more of the name to narrow it down.
+      </p>
+    {% endif %}
     <div class="table-responsive">
       <table class="table align-middle">
         <thead>
