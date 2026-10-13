@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}My books - Chapter Cards{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-4">My books</h1>
+
+  {% if books %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Book</th>
+            <th scope="col" class="text-end">Chapters logged</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for book in books %}
+            <tr>
+              <td>{{ book["title"] }}</td>
+              <td class="text-end">{{ book["chapter_count"] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-body-secondary">
+      You have not started a book yet. Start one when you log your first chapter.
+    </p>
+  {% endif %}
+
+  <a class="btn btn-primary" href="{{ url_for('wallet.log_chapter') }}">Start a new book</a>
+  <a class="btn btn-outline-secondary" href="{{ url_for('wallet.index') }}">Back to my wallet</a>
+{% endblock %}

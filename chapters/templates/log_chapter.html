@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Log a chapter - Chapter Cards{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-4">Log a chapter</h1>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="book_id" class="form-label">Which book?</label>
+      <select class="form-select" id="book_id" name="book_id">
+        <option value="new"
+          {% if request.form.get("book_id", "new") == "new" %}selected{% endif %}>
+          A new book
+        </option>
+        {% for book in books %}
+          <option value="{{ book['id'] }}"
+            {% if request.form.get("book_id") == book["id"]|string %}selected{% endif %}>
+            {{ book["title"] }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="title" class="form-label">New book title</label>
+      <input type="text" class="form-control" id="title" name="title"
+             value="{{ request.form.get('title', '') }}"
+             aria-describedby="title-help">
+      <div id="title-help" class="form-text">
+        Only needed when the book is not on the list yet.
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="chapter_number" class="form-label">Chapter number</label>
+      <input type="number" class="form-control" id="chapter_number"
+             name="chapter_number" min="1" step="1"
+             value="{{ request.form.get('chapter_number', '') }}" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Log it</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('wallet.index') }}">Cancel</a>
+  </form>
+{% endblock %}
