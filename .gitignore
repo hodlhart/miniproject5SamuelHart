@@ -3,7 +3,10 @@ __pycache__/
 .venv/
 
 # The SQLite database is created by `flask init-db`, never committed.
-instance/
+# Ignore the instance folder's contents, not the folder itself, so the tracked
+# .gitkeep below can survive the rule.
+instance/*
+!instance/.gitkeep
 *.sqlite
 *.sqlite3
 *.db
