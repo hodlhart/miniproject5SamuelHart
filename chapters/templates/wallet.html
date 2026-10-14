@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_words.html" import plural %}
 
 {% block title %}My wallet - Pages for Pokemon{% endblock %}
 
@@ -56,8 +57,7 @@
             <td>
               {% if event["kind"] == "chapter" %}
                 {% set n = event["chapter_count"] %}
-                {% set plural = "" if n == 1 else "s" %}
-                Read {{ n }} chapter{{ plural }} of {{ event["label"] }}
+                Read {{ n }} chapter{{ plural(n) }} of {{ event["label"] }}
               {% else %}
                 Bought {{ event["label"] }}
               {% endif %}

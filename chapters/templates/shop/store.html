@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "shop/_card_tile.html" import card_tile %}
+{% from "_words.html" import plural %}
 
 {% block title %}Card shop - Pages for Pokemon{% endblock %}
 
@@ -26,13 +27,15 @@
         {% call card_tile(card) %}
           <p class="mb-0">
             <span class="pp-price">{{ card["price_chapters"] }}</span>
-            <span class="text-body-secondary">chapters</span>
+            <span class="text-body-secondary">
+              chapter{{ plural(card["price_chapters"]) }}
+            </span>
           </p>
           {# balance is None for a parent, who owns the stock and buys nothing. #}
           {% if balance is not none %}
             <button type="button" class="btn btn-primary btn-sm mt-3 mt-auto"
                     data-bs-toggle="modal" data-bs-target="#buy-modal-{{ card['id'] }}">
-              Buy for {{ card["price_chapters"] }} chapters
+              Buy for {{ card["price_chapters"] }} chapter{{ plural(card["price_chapters"]) }}
             </button>
           {% endif %}
         {% endcall %}
@@ -60,10 +63,11 @@
               <div class="modal-body">
                 <p class="mb-1">
                   {{ card["name"] }} costs
-                  <strong>{{ card["price_chapters"] }}</strong> chapters.
+                  <strong>{{ card["price_chapters"] }}</strong>
+                  chapter{{ plural(card["price_chapters"]) }}.
                 </p>
                 <p class="mb-3">
-                  You have <strong>{{ balance }}</strong> chapters.
+                  You have <strong>{{ balance }}</strong> chapter{{ plural(balance) }}.
                 </p>
                 {% if balance < card["price_chapters"] %}
                   <p class="text-danger">

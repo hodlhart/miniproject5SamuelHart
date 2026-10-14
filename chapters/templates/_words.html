@@ -1,0 +1,20 @@
+{# How the app words a count and a tier, in one place.
+
+   Two defects came from the same root, the same rule written out several times and
+   one copy of it being wrong. So the rules live here and every surface reads them.
+
+   plural: the shop served "Buy for 1 chapters" and a search for "1 chapter" found
+   nothing, because the tile that was extracted carried the plural-only copy. Any
+   page that prints a count now calls this, so no page can print "1 chapters".
+
+   tier_label: a kid saw "full_art" with its underscore on the shop page, which is
+   the column value leaking into the interface. The column keeps its own values
+   (normal, ex, full_art) and they are never shown as they stand. #}
+
+{% macro plural(count) -%}
+  {{- "" if count == 1 else "s" -}}
+{%- endmacro %}
+
+{% macro tier_label(tier) -%}
+  {{- {"normal": "normal", "ex": "ex", "full_art": "full art"}[tier] -}}
+{%- endmacro %}

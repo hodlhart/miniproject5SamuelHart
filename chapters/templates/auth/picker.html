@@ -24,22 +24,15 @@
     <div class="pp-empty mb-4">
       <span class="pp-empty-glyph" aria-hidden="true">&#128075;</span>
       <p class="pp-empty-title">No readers yet</p>
-      <p class="pp-empty-text">
-        A grown-up adds the names on the Readers page.
-      </p>
     </div>
   {% endif %}
 
   {# A new kid arriving here and not finding their name is the expected case, not
      a failure, so this reads as an ordinary instruction rather than an error.
-     Readers are added by a parent, which is what keeps this list the family's. #}
+     Nothing here mentions the parent login: the signed-out navbar already carries
+     it, and this is a kid's page. #}
   <p class="text-body-secondary">
     Not on the list yet? Ask a grown-up to add your name, and then you can pick it
     here.
-  </p>
-
-  <p class="mt-4 text-body-secondary small">
-    A grown-up can
-    <a href="{{ url_for('auth.login') }}">log in to the shop</a>.
   </p>
 {% endblock %}

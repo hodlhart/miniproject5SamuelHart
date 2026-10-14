@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "shop/_card_tile.html" import card_tile %}
+{% from "_words.html" import plural %}
 
 {% block title %}My cards - Pages for Pokemon{% endblock %}
 
@@ -20,7 +21,7 @@
           <p class="mb-0 small">
             Cost
             <strong>{{ card["chapters_spent"] }}</strong>
-            chapter{{ "" if card["chapters_spent"] == 1 else "s" }}
+            chapter{{ plural(card["chapters_spent"]) }}
             <span class="text-body-secondary d-block">
               Yours since {{ card["purchased_at"] }}
             </span>

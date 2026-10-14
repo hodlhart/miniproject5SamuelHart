@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{# The dropdown's value must stay the column's own word, because that is what is
+   stored, but what the parent reads comes from tier_label like everywhere else. #}
+{% from "_words.html" import tier_label %}
 
 {% block title %}Add cards - Pages for Pokemon{% endblock %}
 
@@ -88,7 +91,7 @@
                     <select class="form-select form-select-sm" name="tier"
                             aria-label="Tier for {{ match['name'] }}">
                       {% for tier in tier_prices %}
-                        <option value="{{ tier }}">{{ tier }}</option>
+                        <option value="{{ tier }}">{{ tier_label(tier) }}</option>
                       {% endfor %}
                     </select>
                   </div>

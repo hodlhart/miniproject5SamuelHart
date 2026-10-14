@@ -3,6 +3,7 @@
    same tier colours from one definition. Manage gets no stripe: its rows are a
    table, not a grid, and a stripe across a row would be the wrong shape. #}
 {% from "shop/_card_tile.html" import tier_badge %}
+{% from "_words.html" import plural %}
 
 {% block title %}Manage the shop - Pages for Pokemon{% endblock %}
 
@@ -53,7 +54,9 @@
               <td>{{ tier_badge(card) }}</td>
               <td class="text-end">
                 {{ card["price_chapters"] }}
-                <span class="text-body-secondary small">chapters</span>
+                <span class="text-body-secondary small">
+                  chapter{{ plural(card["price_chapters"]) }}
+                </span>
               </td>
               <td>
                 {# The badge and the button use the same two words, so they cannot

@@ -12,8 +12,13 @@
    date on My cards. Manage uses tier_badge on its own, because its rows are a
    table rather than a grid and a stripe would be wrong there. #}
 
+{% from "_words.html" import tier_label %}
+
 {% macro tier_badge(card) %}
-  <span class="badge tier-{{ card['tier'] }}">{{ card["tier"] }}</span>
+  {# The class keeps the column value, because that is what the stylesheet matches
+     on. The words a reader sees come from tier_label, so "full_art" never reaches
+     the page. #}
+  <span class="badge tier-{{ card['tier'] }}">{{ tier_label(card["tier"]) }}</span>
 {% endmacro %}
 
 {% macro card_tile(card) %}
