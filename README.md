@@ -209,19 +209,30 @@ built.
   grown-up.
 - **The name.** I chose Pages for Pokemon.
 
-### What I checked by running the app
+### What I tested by using the app
 
-I checked the behaviour by running it rather than by reading the code.
+Most of what I changed, I found by using the app rather than by reading it. I clicked
+through every page as a reader and again as a parent, logged readings, bought cards, added
+and removed readers, and tried the things a child would try.
 
-- Every page returns 200 for the role that should reach it, and paths that should not
-  exist return 404.
-- The wallet's total always equals what the statement adds up to.
-- A reader cannot add a reading to another reader's book, tested by posting someone
-  else's book id.
-- A reader cannot reach the parent pages, by clicking or by posting a crafted form.
-- A parent cannot buy a card, and a signed-out visitor cannot reach the shop.
-- The card pictures are served by the app from its own folder, and none of them are
-  committed to the repository.
+That is where nearly everything in the two sections above came from. Using it as a reader is
+how I found that the shop could not be reached at all without typing its address, that a
+card arrived with no picture, that the wallet repeated a balance on every row, and that My
+cards and the shop did not mark the tiers the same way. Using it as a parent is how I found
+that adding a card asked me to type a set id nobody can guess, and that a search showed
+names and numbers with no pictures to choose between.
+
+I also tried the things that should not work, because a page that refuses politely is a
+different thing from one that breaks:
+
+- every page in the navbar for the role that should reach it, and paths that should not
+  exist, checking they give a proper not-found rather than a traceback
+- a reader posting another reader's book id, to see whether a reading could land in the
+  wrong ledger
+- a reader reaching for the parent pages by typing the address and by crafting a form
+- a parent trying to buy a card, and a signed-out visitor trying to reach the shop
+- two purchases at the same moment, which is how the overdraw turned up
+- a search for `%`, which is how the wildcard bug turned up
 
 ### What I changed in the AI-generated code
 
