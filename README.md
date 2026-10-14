@@ -128,4 +128,124 @@ shop and manages the readers.
 
 ## AI Usage
 
-_To be written by Sam and pasted in here._
+### What the AI wrote
+
+Claude Code wrote the application code. I gave it the assignment requirements and a
+`CLAUDE.md` in the project describing the rules the app has to hold, and it produced
+the application factory, the four blueprints, the templates, the schema and the
+routes.
+
+Specifically from the AI:
+
+- The application factory in `chapters/__init__.py` and the blueprint layout.
+- `schema.sql` and the connection handling in `chapters/db.py`, including the teardown
+  close and the `init-db` command.
+- Registration, login, logout, and the `login_required` and `parent_required` wrappers.
+- The wallet statement query.
+- The shop, the TCGdex lookup, and the caching of card pictures.
+
+### What I decided about the app's rules
+
+This app is a real one for my family rather than a demonstration, and that shaped most
+of these.
+
+- **The currency is chapters.** My kids read books and earn one chapter per chapter
+  they finish. My wife and I own the physical Pokemon cards, and the kids spend
+  chapters on them at 1, 5 or 10 depending on the card.
+- **A parent sets the price when adding a card.** The tier only fills in the price box
+  as a suggestion. I did not want the price derived from the tier, because repricing a
+  card would then rewrite what a kid had already paid.
+- **The wallet is a statement, not a number.** A kid sees every reading and every
+  purchase, not just a total.
+- **Readers have no passwords.** The app runs on our home network. Kids pick their name
+  from a list, and only the parent account has a username and password.
+- **We log how many chapters were read, not which chapter.** Three chapters in one
+  sitting is one entry worth three.
+- **Removing a reader hides them rather than deleting them.** Their reading history, and
+  the cards they already own, have to survive.
+
+### What I decided about the interface and the flow
+
+The look and the navigation are mine as well. I asked for each of these and had them
+implemented, and in several cases I was correcting something that had already been
+built.
+
+- **The app opens on the reader list.** It used to open on the parent's login form, so
+  the first thing a child saw was a password box they could not use. I had every
+  signed-out page send them to the list of names instead, and a parent now clicks once
+  to reach their login.
+- **The tabs.** A reader gets My wallet, My books, Shop and My cards. A parent gets
+  Shop, Manage, Add cards and Readers. Before that every page worked and the navbar
+  linked to none of them, so the shop could only be reached by typing its address.
+- **Nothing is linked twice.** I had every button removed that repeated a tab already in
+  the navbar. That is where "My books" beside "Log reading" came from, and the same for
+  "Back to my wallet" on the books page.
+- **The words.** "Remove" and "Put back" instead of "Take off sale", with the status
+  badge worded to agree with them. The reader list tells a child to ask a grown-up
+  rather than linking to a parent login, because a child is the one reading that page.
+- **The look.** I chose the colours from the back of a Pokemon card, the deep blue with a
+  gold line, and then from a comic poster for the brighter tones. Thick black outlines
+  and hard offset shadows, and the three card tiers each get their own colour so a kid
+  can tell at a glance what a card costs.
+- **Paging and search.** The shop listed every card in one long page. I had a page size
+  with forward and back, and a search box, on both the shop and the parents' stock.
+- **A set dropdown.** Adding a card asked for the set as typed text, but a set id is not
+  guessable: Base Set is `base1`, and the thirtieth anniversary sets are `30th` and
+  `30th-c`. I had it changed to a dropdown of the catalogue's own set list.
+- **Pictures while searching, and cached afterwards.** A search showed a card's name and
+  number with no picture, so a parent could not tell which printing they were picking.
+  The results now show a picture, and say so when a card has none. And because those
+  pictures were being loaded from the internet on every page view, I had them downloaded
+  once when a card is added and served by the app afterwards, so the shop works with no
+  internet at all.
+- **One total, not a running balance.** The wallet repeated a balance on every row. I
+  had that replaced with the change for each entry and a single total at the bottom.
+- **Parents manage the readers.** Children used to be able to add themselves. I had that
+  moved behind the parent account, with the reader list inviting a child to ask a
+  grown-up.
+- **The name.** I chose Pages for Pokemon.
+
+### What I checked by running the app
+
+I checked the behaviour by running it rather than by reading the code.
+
+- Every page returns 200 for the role that should reach it, and paths that should not
+  exist return 404.
+- The wallet's total always equals what the statement adds up to.
+- A reader cannot add a reading to another reader's book, tested by posting someone
+  else's book id.
+- A reader cannot reach the parent pages, by clicking or by posting a crafted form.
+- A parent cannot buy a card, and a signed-out visitor cannot reach the shop.
+- The card pictures are served by the app from its own folder, and none of them are
+  committed to the repository.
+
+### What I changed in the AI-generated code
+
+Four things the AI shipped that I had fixed. Each came out of testing the app rather
+than reading it.
+
+**1. A chapter could be logged more than once.** The uniqueness rule on a book title
+compared case-sensitively. In practice `Wings of Fire`, `wings of fire` and
+`Wings  of Fire` were three different books, and one chapter could be logged six times
+under six spellings. I had `COLLATE NOCASE` added to the constraint, and the title
+trimmed before it is stored.
+
+**2. Timestamps were stored in UTC.** SQLite's `CURRENT_TIMESTAMP` is UTC. A chapter my
+kid logged at 7pm was stamped with the next day's date on the wallet page. I had the
+schema defaults changed to write local time. I also chose to fix this at storage rather
+than when displaying, because a display-time fix has to be remembered on every page
+that shows a time, and the next page to forget it becomes a bug nobody notices.
+
+**3. Two purchases at the same moment could overdraw a balance.** The buy route read the
+balance and then inserted the purchase. Those are two separate statements, so two quick
+clicks could both pass the same check and spend chapters twice. I had the check moved
+inside the insert so the database evaluates both at once.
+
+**4. The shop said "1 chapters".** It also printed the raw database value `full_art` on a
+card badge, underscore and all. I had both fixed, and the count words put in one place
+so the singular and plural cannot disagree between pages.
+
+### What the AI did not write
+
+The `CLAUDE.md` in this repository is mine, though Claude Code helped with its wording.
+It states what has to be true about the app rather than how to build it.
