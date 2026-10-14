@@ -113,6 +113,10 @@ control to take one off the list.
 Taking a card out of the shop never deletes it. The row stays, because purchases
 point at it and a card that somebody already owns must not vanish from under them.
 
+**Registration and login.** A parent registers readers from the Readers page, and the
+parent account logs in with a username and password at `/auth/login`. Readers do not log
+in: they pick their name from the list, which is the point of the design.
+
 ## The trust model
 
 Readers have no passwords, and anyone who can reach the app on the home network can
@@ -249,3 +253,8 @@ so the singular and plural cannot disagree between pages.
 
 The `CLAUDE.md` in this repository is mine, though Claude Code helped with its wording.
 It states what has to be true about the app rather than how to build it.
+
+## Credits
+
+Card names, sets, numbers and pictures come from [TCGdex](https://tcgdex.dev), which
+needs no API key. The app caches the pictures locally and never commits them.

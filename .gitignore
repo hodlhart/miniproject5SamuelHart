@@ -12,5 +12,8 @@ instance/*
 *.db
 
 # No credential belongs in this project (TCGdex needs no API key), but keep
-# the ignore rule so one can never be committed by accident.
+# these rules so one can never be committed by accident.
 .env
+scratch.http
+token.txt
+.streamlit/secrets.toml
