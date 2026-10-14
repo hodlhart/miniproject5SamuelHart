@@ -66,7 +66,23 @@ flask --app chapters create-parent <name>     # 3. the parent account
    asks for the password twice, hidden. Readers have no password at all, and are
    added from the Readers page by a parent.
 
-With no virtual environment active, the same three commands are
+### Optional: demo data
+
+```fish
+flask --app chapters seed-demo
+```
+
+This adds sixteen cards, three readers with some reading logged, and a couple of
+purchases, so a fresh clone has something to look at without adding a card by hand
+first. It exists only for that, and the app does not need it.
+
+It is safe to run twice: a card or a reader that is already there is reported and left
+alone. It never creates a parent account, and no password is written into the source,
+so if there is no parent yet it says so and points at `create-parent`. With no
+connection it still adds the cards and readers, and says that the pictures were not
+cached.
+
+With no virtual environment active, the same commands are
 `.venv/bin/flask --app chapters ...`.
 
 ## Run it
